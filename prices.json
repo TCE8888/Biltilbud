@@ -1,43 +1,134 @@
 {
   "models": [
     {
-      "name": "Modell A",
-      "price": 350000,
+      "name": "Modell 1",
+      "price": 0,
       "extras": [
-        { "name": "Vinterhjulsett", "price": 12000 },
-        { "name": "Skinnseter", "price": 18000 },
-        { "name": "Tilhengerfeste", "price": 8000 }
+        { "name": "Vinterhjulsett", "price": 0 },
+        { "name": "Skinnseter", "price": 0 },
+        { "name": "Tilhengerfeste", "price": 0 },
+        { "name": "Soltak", "price": 0 },
+        { "name": "Head-up display", "price": 0 },
+        { "name": "Ryggekamera", "price": 0 },
+        { "name": "Adaptiv cruisekontroll", "price": 0 },
+        { "name": "Varme i ratt", "price": 0 }
+      ],
+      "paints": [
+        { "name": "Hvit", "price": 0 },
+        { "name": "Sort metallic", "price": 0 },
+        { "name": "Grå metallic", "price": 0 },
+        { "name": "Blå metallic", "price": 0 },
+        { "name": "Rød metallic", "price": 0 },
+        { "name": "Sølv metallic", "price": 0 }
+      ],
+      "interiors": [
+        { "name": "Mørkt brunt interiør", "price": 0 },
+        { "name": "Lyst brunt interiør", "price": 0 }
       ]
     },
     {
-      "name": "Modell B",
-      "price": 420000,
+      "name": "Modell 2",
+      "price": 0,
       "extras": [
-        { "name": "Vinterhjulsett", "price": 14000 },
-        { "name": "Skinnseter", "price": 20000 },
-        { "name": "Tilhengerfeste", "price": 9000 },
-        { "name": "Soltak", "price": 15000 }
+        { "name": "Vinterhjulsett", "price": 0 },
+        { "name": "Skinnseter", "price": 0 },
+        { "name": "Tilhengerfeste", "price": 0 },
+        { "name": "Soltak", "price": 0 },
+        { "name": "Head-up display", "price": 0 },
+        { "name": "Ryggekamera", "price": 0 },
+        { "name": "Adaptiv cruisekontroll", "price": 0 },
+        { "name": "Varme i ratt", "price": 0 }
+      ],
+      "paints": [
+        { "name": "Hvit", "price": 0 },
+        { "name": "Sort metallic", "price": 0 },
+        { "name": "Grå metallic", "price": 0 },
+        { "name": "Blå metallic", "price": 0 },
+        { "name": "Rød metallic", "price": 0 },
+        { "name": "Sølv metallic", "price": 0 }
+      ],
+      "interiors": [
+        { "name": "Mørkt brunt interiør", "price": 0 },
+        { "name": "Lyst brunt interiør", "price": 0 }
       ]
     },
     {
-      "name": "Modell C",
-      "price": 510000,
+      "name": "Modell 3",
+      "price": 0,
       "extras": [
-        { "name": "Vinterhjulsett", "price": 16000 },
-        { "name": "Skinnseter", "price": 22000 },
-        { "name": "Tilhengerfeste", "price": 9500 },
-        { "name": "Soltak", "price": 17000 },
-        { "name": "Head-up display", "price": 11000 }
+        { "name": "Vinterhjulsett", "price": 0 },
+        { "name": "Skinnseter", "price": 0 },
+        { "name": "Tilhengerfeste", "price": 0 },
+        { "name": "Soltak", "price": 0 },
+        { "name": "Head-up display", "price": 0 },
+        { "name": "Ryggekamera", "price": 0 },
+        { "name": "Adaptiv cruisekontroll", "price": 0 },
+        { "name": "Varme i ratt", "price": 0 }
+      ],
+      "paints": [
+        { "name": "Hvit", "price": 0 },
+        { "name": "Sort metallic", "price": 0 },
+        { "name": "Grå metallic", "price": 0 },
+        { "name": "Blå metallic", "price": 0 },
+        { "name": "Rød metallic", "price": 0 },
+        { "name": "Sølv metallic", "price": 0 }
+      ],
+      "interiors": [
+        { "name": "Mørkt brunt interiør", "price": 0 },
+        { "name": "Lyst brunt interiør", "price": 0 }
+      ]
+    },
+    {
+      "name": "Modell 4",
+      "price": 0,
+      "extras": [
+        { "name": "Vinterhjulsett", "price": 0 },
+        { "name": "Skinnseter", "price": 0 },
+        { "name": "Tilhengerfeste", "price": 0 },
+        { "name": "Soltak", "price": 0 },
+        { "name": "Head-up display", "price": 0 },
+        { "name": "Ryggekamera", "price": 0 },
+        { "name": "Adaptiv cruisekontroll", "price": 0 },
+        { "name": "Varme i ratt", "price": 0 }
+      ],
+      "paints": [
+        { "name": "Hvit", "price": 0 },
+        { "name": "Sort metallic", "price": 0 },
+        { "name": "Grå metallic", "price": 0 },
+        { "name": "Blå metallic", "price": 0 },
+        { "name": "Rød metallic", "price": 0 },
+        { "name": "Sølv metallic", "price": 0 }
+      ],
+      "interiors": [
+        { "name": "Mørkt brunt interiør", "price": 0 },
+        { "name": "Lyst brunt interiør", "price": 0 }
+      ]
+    },
+    {
+      "name": "Modell 5",
+      "price": 0,
+      "extras": [
+        { "name": "Vinterhjulsett", "price": 0 },
+        { "name": "Skinnseter", "price": 0 },
+        { "name": "Tilhengerfeste", "price": 0 },
+        { "name": "Soltak", "price": 0 },
+        { "name": "Head-up display", "price": 0 },
+        { "name": "Ryggekamera", "price": 0 },
+        { "name": "Adaptiv cruisekontroll", "price": 0 },
+        { "name": "Varme i ratt", "price": 0 }
+      ],
+      "paints": [
+        { "name": "Hvit", "price": 0 },
+        { "name": "Sort metallic", "price": 0 },
+        { "name": "Grå metallic", "price": 0 },
+        { "name": "Blå metallic", "price": 0 },
+        { "name": "Rød metallic", "price": 0 },
+        { "name": "Sølv metallic", "price": 0 }
+      ],
+      "interiors": [
+        { "name": "Mørkt brunt interiør", "price": 0 },
+        { "name": "Lyst brunt interiør", "price": 0 }
       ]
     }
-  ],
-  "paints": [
-    { "name": "Hvit", "price": 0 },
-    { "name": "Sort metallic", "price": 9000 },
-    { "name": "Grå metallic", "price": 9000 }
-  ],
-  "interiors": [
-    { "name": "Mørkt brunt interiør", "price": 0 },
-    { "name": "Lyst brunt interiør", "price": 0 }
   ]
 }
