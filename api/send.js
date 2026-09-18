@@ -1,10 +1,24 @@
+const fs = require("fs");
+const path = require("path");
 const nodemailer = require("nodemailer");
 const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
+const { getReminderStore, REMINDER_KEY } = require("../lib/reminderStore.js");
 
 // Vercel serverless function (Node runtime). Receives a model, a list of
 // checked extras, and customer contact details as JSON, builds a one-page
 // PDF price offer server-side, and emails it straight to the customer
 // (with an optional BCC copy to the dealer) via Gmail SMTP.
+
+// Logo (logo.png at the project root, served as a static asset) is read
+// once at cold start via a literal fs path so Vercel's build tracing bundles
+// it into the function automatically — no network call needed at request
+// time. Falls back to a plain text heading if the file isn't there.
+let LOGO_BYTES = null;
+try {
+  LOGO_BYTES = fs.readFileSync(path.join(__dirname, "..", "logo.png"));
+} catch (e) {
+  LOGO_BYTES = null;
+}
 
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
@@ -69,7 +83,25 @@ async function buildOfferPdf(data) {
     y -= 16;
   }
 
-  text(data.companyName || "Autosalg", { font: bold, size: 20, color: accent, gap: 26 });
+  let logoDrawn = false;
+  if (data.logoBytes) {
+    try {
+      const logoImage = await pdfDoc.embedPng(data.logoBytes);
+      const maxWidth = 170;
+      const maxHeight = 40;
+      const scale = Math.min(maxWidth / logoImage.width, maxHeight / logoImage.height);
+      const w = logoImage.width * scale;
+      const h = logoImage.height * scale;
+      page.drawImage(logoImage, { x: margin, y: y - h, width: w, height: h });
+      y -= h + 16;
+      logoDrawn = true;
+    } catch (e) {
+      logoDrawn = false; // fall through to the text heading below
+    }
+  }
+  if (!logoDrawn) {
+    text(data.companyName || "Autosalg", { font: bold, size: 20, color: accent, gap: 26 });
+  }
   text("Tilbud på ny bil", { size: 13, color: muted, gap: 22 });
   hr();
 
@@ -256,6 +288,7 @@ module.exports = async function handler(req, res) {
   try {
     pdfBuffer = await buildOfferPdf({
       companyName: companyName || "Autosalg",
+      logoBytes: LOGO_BYTES,
       model: model,
       paint: cleanPaint,
       interior: cleanInterior,
@@ -352,5 +385,32 @@ module.exports = async function handler(req, res) {
     res.status(200).json({ ok: true });
   } catch (e) {
     res.status(502).json({ error: "send_failed", message: String((e && e.message) || e) });
+    return;
+  }
+
+  // Queue a "day after" reminder — best effort. If no reminder database is
+  // connected yet (getReminderStore() returns null) or the write fails for
+  // any reason, the offer has already been sent successfully above, so we
+  // must not fail the request over this; the reminder feature just stays
+  // inactive until a database is connected.
+  try {
+    const store = getReminderStore();
+    if (store) {
+      await store.rpush(
+        REMINDER_KEY,
+        JSON.stringify({
+          customerEmail: customer.email,
+          customerName: customer.name || "",
+          modelName: model.name,
+          companyName: companyName || "Autosalg",
+          sellerName: cleanSellerName || "",
+          replyToEmail: replyToEmail || "",
+          bcc: bcc && typeof bcc === "string" && bcc.trim() ? bcc.trim() : "",
+          sentAt: Date.now(),
+        })
+      );
+    }
+  } catch (e) {
+    // Non-fatal — see comment above.
   }
 };
