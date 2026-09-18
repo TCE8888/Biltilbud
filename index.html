@@ -278,10 +278,9 @@
   // redigeres på GitHub (fungerer best på PC), ikke i appen selv, slik at
   // alle selgere alltid ser samme priser uten å måtte legge dem inn selv.
   var FALLBACK_PRICES = {
-    models: [{ name: "Modell A", price: 350000 }],
+    models: [{ name: "Modell A", price: 350000, extras: [] }],
     paints: [{ name: "Hvit", price: 0 }],
-    interiors: [{ name: "Ikke spesifisert", price: 0 }],
-    extras: []
+    interiors: [{ name: "Ikke spesifisert", price: 0 }]
   };
 
   var DEFAULTS = { companyName: "Autosalg", dealerEmail: "", secret: "" };
@@ -326,10 +325,11 @@
       if (!res.ok) throw new Error("bad status");
       var data = await res.json();
       var normalized = {
-        models: Array.isArray(data.models) ? data.models : [],
+        models: (Array.isArray(data.models) ? data.models : []).map(function (m) {
+          return { name: m.name, price: m.price, extras: Array.isArray(m.extras) ? m.extras : [] };
+        }),
         paints: Array.isArray(data.paints) ? data.paints : [],
-        interiors: Array.isArray(data.interiors) ? data.interiors : [],
-        extras: Array.isArray(data.extras) ? data.extras : []
+        interiors: Array.isArray(data.interiors) ? data.interiors : []
       };
       cachePrices(normalized);
       return normalized;
@@ -348,7 +348,6 @@
   settings.models = [];
   settings.paints = [];
   settings.interiors = [];
-  settings.extras = [];
   var state = { modelIdx: -1, paintIdx: -1, interiorIdx: -1, extraIdxs: {} };
 
   var modelList = document.getElementById("modelList");
@@ -415,7 +414,7 @@
   function renderModels() {
     modelList.innerHTML = "";
     if (!settings.models.length) {
-      modelList.innerHTML = '<div class="empty-hint">Ingen modeller lagt inn ennå — legg til under innstillinger ⚙.</div>';
+      modelList.innerHTML = '<div class="empty-hint">Ingen modeller registrert i prices.json ennå.</div>';
       return;
     }
     settings.models.forEach(function (m, idx) {
@@ -425,9 +424,13 @@
       card.setAttribute("aria-pressed", state.modelIdx === idx ? "true" : "false");
       card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(m.name) + '</span><span class="pick-price">' + formatNOK(m.price) + '</span>';
       card.addEventListener("click", function () {
-        state.modelIdx = idx;
-        renderModels();
-        updateSummary();
+        if (state.modelIdx !== idx) {
+          state.modelIdx = idx;
+          state.extraIdxs = {};
+          renderModels();
+          renderExtras();
+          updateSummary();
+        }
       });
       modelList.appendChild(card);
     });
@@ -436,7 +439,7 @@
   function renderPaints() {
     paintList.innerHTML = "";
     if (!settings.paints.length) {
-      paintList.innerHTML = '<div class="empty-hint">Ingen lakkfarger lagt inn ennå — legg til under innstillinger ⚙.</div>';
+      paintList.innerHTML = '<div class="empty-hint">Ingen lakkfarger registrert i prices.json ennå.</div>';
       return;
     }
     settings.paints.forEach(function (p, idx) {
@@ -457,7 +460,7 @@
   function renderInteriors() {
     interiorList.innerHTML = "";
     if (!settings.interiors.length) {
-      interiorList.innerHTML = '<div class="empty-hint">Ingen interiørvalg lagt inn ennå — legg til under innstillinger ⚙.</div>';
+      interiorList.innerHTML = '<div class="empty-hint">Ingen interiørvalg registrert i prices.json ennå.</div>';
       return;
     }
     settings.interiors.forEach(function (it, idx) {
@@ -475,13 +478,24 @@
     });
   }
 
+  function currentExtras() {
+    var model = getSelectedModel();
+    return model && Array.isArray(model.extras) ? model.extras : [];
+  }
+
   function renderExtras() {
     extraList.innerHTML = "";
-    if (!settings.extras.length) {
-      extraList.innerHTML = '<div class="empty-hint">Ingen ekstrautstyr lagt inn ennå — legg til under innstillinger ⚙.</div>';
+    var model = getSelectedModel();
+    if (!model) {
+      extraList.innerHTML = '<div class="empty-hint">Velg en modell først under fanen Modell.</div>';
       return;
     }
-    settings.extras.forEach(function (ex, idx) {
+    var extras = currentExtras();
+    if (!extras.length) {
+      extraList.innerHTML = '<div class="empty-hint">Ingen ekstrautstyr registrert for ' + escapeHtml(model.name) + '.</div>';
+      return;
+    }
+    extras.forEach(function (ex, idx) {
       var picked = !!state.extraIdxs[idx];
       var card = document.createElement("div");
       card.className = "pick-card";
@@ -514,7 +528,8 @@
     return state.interiorIdx >= 0 ? settings.interiors[state.interiorIdx] : null;
   }
   function getSelectedExtras() {
-    return Object.keys(state.extraIdxs).map(function (i) { return settings.extras[+i]; }).filter(Boolean);
+    var extras = currentExtras();
+    return Object.keys(state.extraIdxs).map(function (i) { return extras[+i]; }).filter(Boolean);
   }
 
   function updateSummary() {
@@ -694,7 +709,6 @@
     settings.models = prices.models;
     settings.paints = prices.paints;
     settings.interiors = prices.interiors;
-    settings.extras = prices.extras;
     state.modelIdx = settings.models.length ? 0 : -1;
     state.paintIdx = settings.paints.length ? 0 : -1;
     state.interiorIdx = settings.interiors.length ? 0 : -1;
