@@ -1,8 +1,35 @@
 {
   "models": [
-    { "name": "Modell A", "price": 350000 },
-    { "name": "Modell B", "price": 420000 },
-    { "name": "Modell C", "price": 510000 }
+    {
+      "name": "Modell A",
+      "price": 350000,
+      "extras": [
+        { "name": "Vinterhjulsett", "price": 12000 },
+        { "name": "Skinnseter", "price": 18000 },
+        { "name": "Tilhengerfeste", "price": 8000 }
+      ]
+    },
+    {
+      "name": "Modell B",
+      "price": 420000,
+      "extras": [
+        { "name": "Vinterhjulsett", "price": 14000 },
+        { "name": "Skinnseter", "price": 20000 },
+        { "name": "Tilhengerfeste", "price": 9000 },
+        { "name": "Soltak", "price": 15000 }
+      ]
+    },
+    {
+      "name": "Modell C",
+      "price": 510000,
+      "extras": [
+        { "name": "Vinterhjulsett", "price": 16000 },
+        { "name": "Skinnseter", "price": 22000 },
+        { "name": "Tilhengerfeste", "price": 9500 },
+        { "name": "Soltak", "price": 17000 },
+        { "name": "Head-up display", "price": 11000 }
+      ]
+    }
   ],
   "paints": [
     { "name": "Hvit", "price": 0 },
@@ -12,10 +39,5 @@
   "interiors": [
     { "name": "Mørkt brunt interiør", "price": 0 },
     { "name": "Lyst brunt interiør", "price": 0 }
-  ],
-  "extras": [
-    { "name": "Vinterhjulsett", "price": 12000 },
-    { "name": "Skinnseter", "price": 18000 },
-    { "name": "Tilhengerfeste", "price": 8000 }
   ]
 }
