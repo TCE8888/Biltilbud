@@ -1,0 +1,21 @@
+{
+  "models": [
+    { "name": "Modell A", "price": 350000 },
+    { "name": "Modell B", "price": 420000 },
+    { "name": "Modell C", "price": 510000 }
+  ],
+  "paints": [
+    { "name": "Hvit", "price": 0 },
+    { "name": "Sort metallic", "price": 9000 },
+    { "name": "Grå metallic", "price": 9000 }
+  ],
+  "interiors": [
+    { "name": "Mørkt brunt interiør", "price": 0 },
+    { "name": "Lyst brunt interiør", "price": 0 }
+  ],
+  "extras": [
+    { "name": "Vinterhjulsett", "price": 12000 },
+    { "name": "Skinnseter", "price": 18000 },
+    { "name": "Tilhengerfeste", "price": 8000 }
+  ]
+}
