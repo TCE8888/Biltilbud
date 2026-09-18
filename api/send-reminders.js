@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const { getReminderStore, REMINDER_KEY } = require("../lib/reminderStore.js");
+const { getReminderStore, REMINDER_KEY } = require("../reminderStore.js");
 
 // Triggered once a day by Vercel Cron (see vercel.json). Goes through every
 // offer queued by api/send.js and, for the ones sent roughly a day ago,

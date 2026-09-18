@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const nodemailer = require("nodemailer");
 const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
-const { getReminderStore, REMINDER_KEY } = require("../lib/reminderStore.js");
+const { getReminderStore, REMINDER_KEY } = require("../reminderStore.js");
 
 // Vercel serverless function (Node runtime). Receives a model, a list of
 // checked extras, and customer contact details as JSON, builds a one-page
