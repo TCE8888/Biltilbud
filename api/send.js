@@ -289,6 +289,38 @@ module.exports = async function handler(req, res) {
     contactLine +
     "Mvh " + signOff + (cleanSellerName ? " / " + (companyName || "Autosalg") : "");
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // A real "Svar her" button (mailto link) for email clients that render
+  // HTML, so the customer doesn't have to hit the ordinary Reply button —
+  // it opens a fresh email already addressed and with a subject filled in.
+  // Falls back to plain text (bodyText) automatically if the client can't
+  // show HTML.
+  let mailtoHref = "";
+  if (replyToEmail) {
+    var mailtoSubject = encodeURIComponent("Spørsmål om tilbud – " + model.name);
+    var mailtoBody = encodeURIComponent(
+      "Hei" + (cleanSellerName ? " " + cleanSellerName : "") + ",\n\nJeg har et spørsmål om tilbudet på " + model.name + ".\n\n"
+    );
+    mailtoHref = "mailto:" + encodeURIComponent(replyToEmail) + "?subject=" + mailtoSubject + "&body=" + mailtoBody;
+  }
+
+  const htmlBody =
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#1d2420;max-width:480px;">' +
+    "<p>Hei" + (greetName ? " " + escapeHtml(greetName) : "") + ",</p>" +
+    "<p>Vedlagt følger tilbud på <strong>" + escapeHtml(model.name) + "</strong>, totalpris <strong>" + formatNOK(total) + "</strong>.<br>" +
+    "Tilbudet er gyldig til " + validUntilStr + " (14 dager fra i dag).</p>" +
+    (mailtoHref
+      ? '<p style="margin:24px 0;"><a href="' + mailtoHref + '" style="display:inline-block;background:#2f6f5e;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;">Svar her</a></p>' +
+        (sellerLine ? '<p style="color:#6c756e;font-size:13px;">Eller ta kontakt direkte: ' + escapeHtml(sellerLine) + "</p>" : "")
+      : "<p>" + (sellerLine ? "Ta gjerne kontakt: " + escapeHtml(sellerLine) + "." : "Ta gjerne kontakt om du har spørsmål.") + "</p>") +
+    "<p>Mvh " + escapeHtml(signOff) + (cleanSellerName ? " / " + escapeHtml(companyName || "Autosalg") : "") + "</p>" +
+    "</div>";
+
   const fromName = process.env.FROM_NAME || companyName || "Autosalg";
   const fromEmail = process.env.FROM_EMAIL || gmailUser;
   const mailOptions = {
@@ -296,6 +328,7 @@ module.exports = async function handler(req, res) {
     to: customer.email,
     subject: "Tilbud – " + model.name,
     text: bodyText,
+    html: htmlBody,
     attachments: [
       {
         filename: "tilbud-" + model.name.replace(/[^a-z0-9æøå]+/gi, "-").toLowerCase() + ".pdf",
