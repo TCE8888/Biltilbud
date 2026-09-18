@@ -87,11 +87,15 @@
     max-width: 480px; width: 100%; margin: 0 auto;
   }
 
-  .tabbar { display: flex; gap: 6px; background: var(--surface-sunken); padding: 4px; border-radius: 12px; }
+  .tabbar {
+    display: flex; gap: 6px; background: var(--surface-sunken); padding: 4px; border-radius: 12px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .tabbar::-webkit-scrollbar { display: none; }
   .tabbtn {
-    flex: 1; appearance: none; border: none; background: transparent; color: var(--muted);
-    font-family: "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 13px; padding: 10px 6px;
-    border-radius: 9px; cursor: pointer;
+    flex: 0 0 auto; appearance: none; border: none; background: transparent; color: var(--muted);
+    font-family: "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 13px; padding: 10px 14px;
+    border-radius: 9px; cursor: pointer; white-space: nowrap;
   }
   .tabbtn[aria-selected="true"] { background: var(--surface); color: var(--accent-strong); box-shadow: var(--shadow); }
 
@@ -100,7 +104,7 @@
     text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;
   }
 
-  .model-list, .extra-list { display: flex; flex-direction: column; gap: 8px; }
+  .model-list, .extra-list, .paint-list, .interior-list { display: flex; flex-direction: column; gap: 8px; }
   .pick-card {
     display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line);
     border-radius: 12px; padding: 12px 14px; cursor: pointer; box-shadow: var(--shadow);
@@ -202,6 +206,8 @@
 <main>
   <div class="tabbar" role="tablist">
     <button class="tabbtn" id="tabBtnModel" role="tab" aria-selected="true">Modell</button>
+    <button class="tabbtn" id="tabBtnPaint" role="tab" aria-selected="false">Lakk</button>
+    <button class="tabbtn" id="tabBtnInterior" role="tab" aria-selected="false">Interiør</button>
     <button class="tabbtn" id="tabBtnExtras" role="tab" aria-selected="false">Ekstrautstyr</button>
     <button class="tabbtn" id="tabBtnCustomer" role="tab" aria-selected="false">Kunde</button>
   </div>
@@ -209,6 +215,16 @@
   <section id="panelModel">
     <span class="field-label">Velg modell</span>
     <div class="model-list" id="modelList"></div>
+  </section>
+
+  <section id="panelPaint" hidden>
+    <span class="field-label">Velg lakk</span>
+    <div class="paint-list" id="paintList"></div>
+  </section>
+
+  <section id="panelInterior" hidden>
+    <span class="field-label">Velg interiør</span>
+    <div class="interior-list" id="interiorList"></div>
   </section>
 
   <section id="panelExtras" hidden>
@@ -233,6 +249,8 @@
 
   <div class="summary-card">
     <div class="summary-row" id="summaryModelRow"><span>Modell</span><span>–</span></div>
+    <div class="summary-row" id="summaryPaintRow" hidden><span>Lakk</span><span>–</span></div>
+    <div class="summary-row" id="summaryInteriorRow" hidden><span>Interiør</span><span>–</span></div>
     <div class="summary-row" id="summaryExtrasRow" hidden><span>Ekstrautstyr</span><span>–</span></div>
     <div class="summary-total"><span>Totalpris</span><span id="summaryTotal">0 kr</span></div>
   </div>
@@ -261,8 +279,16 @@
     extras: [
       { name: "Vinterhjulsett", price: 12000 },
       { name: "Skinnseter", price: 18000 },
-      { name: "Tilhengerfeste", price: 8000 },
-      { name: "Metallic lakk", price: 9000 }
+      { name: "Tilhengerfeste", price: 8000 }
+    ],
+    paints: [
+      { name: "Hvit", price: 0 },
+      { name: "Sort metallic", price: 9000 },
+      { name: "Grå metallic", price: 9000 }
+    ],
+    interiors: [
+      { name: "Mørkt brunt interiør", price: 0 },
+      { name: "Lyst brunt interiør", price: 0 }
     ]
   };
 
@@ -276,7 +302,9 @@
           dealerEmail: typeof p.dealerEmail === "string" ? p.dealerEmail : DEFAULTS.dealerEmail,
           secret: typeof p.secret === "string" ? p.secret : DEFAULTS.secret,
           models: Array.isArray(p.models) && p.models.length ? p.models : DEFAULTS.models.slice(),
-          extras: Array.isArray(p.extras) ? p.extras : DEFAULTS.extras.slice()
+          extras: Array.isArray(p.extras) ? p.extras : DEFAULTS.extras.slice(),
+          paints: Array.isArray(p.paints) ? p.paints : DEFAULTS.paints.slice(),
+          interiors: Array.isArray(p.interiors) ? p.interiors : DEFAULTS.interiors.slice()
         };
       }
     } catch (e) {}
@@ -285,7 +313,9 @@
       dealerEmail: DEFAULTS.dealerEmail,
       secret: DEFAULTS.secret,
       models: DEFAULTS.models.slice(),
-      extras: DEFAULTS.extras.slice()
+      extras: DEFAULTS.extras.slice(),
+      paints: DEFAULTS.paints.slice(),
+      interiors: DEFAULTS.interiors.slice()
     };
   }
 
@@ -294,14 +324,25 @@
   }
 
   var settings = loadSettings();
-  var state = { modelIdx: settings.models.length ? 0 : -1, extraIdxs: {} };
+  var state = {
+    modelIdx: settings.models.length ? 0 : -1,
+    paintIdx: settings.paints.length ? 0 : -1,
+    interiorIdx: settings.interiors.length ? 0 : -1,
+    extraIdxs: {}
+  };
 
   var modelList = document.getElementById("modelList");
+  var paintList = document.getElementById("paintList");
+  var interiorList = document.getElementById("interiorList");
   var extraList = document.getElementById("extraList");
   var tabBtnModel = document.getElementById("tabBtnModel");
+  var tabBtnPaint = document.getElementById("tabBtnPaint");
+  var tabBtnInterior = document.getElementById("tabBtnInterior");
   var tabBtnExtras = document.getElementById("tabBtnExtras");
   var tabBtnCustomer = document.getElementById("tabBtnCustomer");
   var panelModel = document.getElementById("panelModel");
+  var panelPaint = document.getElementById("panelPaint");
+  var panelInterior = document.getElementById("panelInterior");
   var panelExtras = document.getElementById("panelExtras");
   var panelCustomer = document.getElementById("panelCustomer");
   var custName = document.getElementById("custName");
@@ -309,6 +350,8 @@
   var custEmail = document.getElementById("custEmail");
   var custNote = document.getElementById("custNote");
   var summaryModelRow = document.getElementById("summaryModelRow");
+  var summaryPaintRow = document.getElementById("summaryPaintRow");
+  var summaryInteriorRow = document.getElementById("summaryInteriorRow");
   var summaryExtrasRow = document.getElementById("summaryExtrasRow");
   var summaryTotal = document.getElementById("summaryTotal");
   var sendBtn = document.getElementById("sendBtn");
@@ -331,6 +374,8 @@
 
   var tabs = [
     { btn: tabBtnModel, panel: panelModel },
+    { btn: tabBtnPaint, panel: panelPaint },
+    { btn: tabBtnInterior, panel: panelInterior },
     { btn: tabBtnExtras, panel: panelExtras },
     { btn: tabBtnCustomer, panel: panelCustomer }
   ];
@@ -342,8 +387,10 @@
     });
   }
   tabBtnModel.addEventListener("click", function () { selectTab(0); });
-  tabBtnExtras.addEventListener("click", function () { selectTab(1); });
-  tabBtnCustomer.addEventListener("click", function () { selectTab(2); });
+  tabBtnPaint.addEventListener("click", function () { selectTab(1); });
+  tabBtnInterior.addEventListener("click", function () { selectTab(2); });
+  tabBtnExtras.addEventListener("click", function () { selectTab(3); });
+  tabBtnCustomer.addEventListener("click", function () { selectTab(4); });
 
   function renderModels() {
     modelList.innerHTML = "";
@@ -363,6 +410,48 @@
         updateSummary();
       });
       modelList.appendChild(card);
+    });
+  }
+
+  function renderPaints() {
+    paintList.innerHTML = "";
+    if (!settings.paints.length) {
+      paintList.innerHTML = '<div class="empty-hint">Ingen lakkfarger lagt inn ennå — legg til under innstillinger ⚙.</div>';
+      return;
+    }
+    settings.paints.forEach(function (p, idx) {
+      var card = document.createElement("div");
+      card.className = "pick-card";
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-pressed", state.paintIdx === idx ? "true" : "false");
+      card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(p.name) + '</span><span class="pick-price">' + (p.price ? formatNOK(p.price) : "Inkludert") + '</span>';
+      card.addEventListener("click", function () {
+        state.paintIdx = idx;
+        renderPaints();
+        updateSummary();
+      });
+      paintList.appendChild(card);
+    });
+  }
+
+  function renderInteriors() {
+    interiorList.innerHTML = "";
+    if (!settings.interiors.length) {
+      interiorList.innerHTML = '<div class="empty-hint">Ingen interiørvalg lagt inn ennå — legg til under innstillinger ⚙.</div>';
+      return;
+    }
+    settings.interiors.forEach(function (it, idx) {
+      var card = document.createElement("div");
+      card.className = "pick-card";
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-pressed", state.interiorIdx === idx ? "true" : "false");
+      card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(it.name) + '</span><span class="pick-price">' + (it.price ? formatNOK(it.price) : "Inkludert") + '</span>';
+      card.addEventListener("click", function () {
+        state.interiorIdx = idx;
+        renderInteriors();
+        updateSummary();
+      });
+      interiorList.appendChild(card);
     });
   }
 
@@ -398,22 +487,46 @@
   function getSelectedModel() {
     return state.modelIdx >= 0 ? settings.models[state.modelIdx] : null;
   }
+  function getSelectedPaint() {
+    return state.paintIdx >= 0 ? settings.paints[state.paintIdx] : null;
+  }
+  function getSelectedInterior() {
+    return state.interiorIdx >= 0 ? settings.interiors[state.interiorIdx] : null;
+  }
   function getSelectedExtras() {
     return Object.keys(state.extraIdxs).map(function (i) { return settings.extras[+i]; }).filter(Boolean);
   }
 
   function updateSummary() {
     var model = getSelectedModel();
+    var paint = getSelectedPaint();
+    var interior = getSelectedInterior();
     var extras = getSelectedExtras();
     var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
     summaryModelRow.querySelector("span:last-child").textContent = model ? (model.name + " · " + formatNOK(model.price)) : "–";
+
+    if (paint) {
+      summaryPaintRow.hidden = false;
+      summaryPaintRow.querySelector("span:last-child").textContent = paint.name + (paint.price ? " · " + formatNOK(paint.price) : "");
+    } else {
+      summaryPaintRow.hidden = true;
+    }
+
+    if (interior) {
+      summaryInteriorRow.hidden = false;
+      summaryInteriorRow.querySelector("span:last-child").textContent = interior.name + (interior.price ? " · " + formatNOK(interior.price) : "");
+    } else {
+      summaryInteriorRow.hidden = true;
+    }
+
     if (extras.length) {
       summaryExtrasRow.hidden = false;
       summaryExtrasRow.querySelector("span:last-child").textContent = extras.length + " valgt · " + formatNOK(extrasSum);
     } else {
       summaryExtrasRow.hidden = true;
     }
-    var total = (model ? model.price : 0) + extrasSum;
+
+    var total = (model ? model.price : 0) + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum;
     summaryTotal.textContent = formatNOK(total);
     updateSendState();
   }
@@ -460,6 +573,8 @@
         body: JSON.stringify({
           companyName: settings.companyName,
           model: model,
+          paint: getSelectedPaint(),
+          interior: getSelectedInterior(),
           extras: getSelectedExtras(),
           customer: {
             name: custName.value.trim(),
@@ -525,6 +640,26 @@
           '</div>' +
         '</div>' +
         '<div class="sheet-section">' +
+          '<h2>Lakk</h2>' +
+          '<p class="hint">Lakkfarger kunden kan velge mellom (sett pris 0 om den er inkludert).</p>' +
+          '<div class="item-list" id="paintSettingList"></div>' +
+          '<div class="add-row">' +
+            '<div class="input-wrap item-name"><input type="text" id="newPaintName" placeholder="Lakkfarge"></div>' +
+            '<div class="input-wrap item-price"><input type="number" id="newPaintPrice" placeholder="Pris"></div>' +
+            '<button type="button" id="addPaintBtn">Legg til</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Interiør</h2>' +
+          '<p class="hint">Interiørvalg kunden kan velge mellom.</p>' +
+          '<div class="item-list" id="interiorSettingList"></div>' +
+          '<div class="add-row">' +
+            '<div class="input-wrap item-name"><input type="text" id="newInteriorName" placeholder="F.eks. Mørkt brunt interiør"></div>' +
+            '<div class="input-wrap item-price"><input type="number" id="newInteriorPrice" placeholder="Pris"></div>' +
+            '<button type="button" id="addInteriorBtn">Legg til</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
           '<h2>Ekstrautstyr</h2>' +
           '<p class="hint">Alt kunden kan hake av, med pris.</p>' +
           '<div class="item-list" id="extraSettingList"></div>' +
@@ -587,6 +722,80 @@
       renderModelSettings();
     });
 
+    var paintSettingList = backdrop.querySelector("#paintSettingList");
+    function renderPaintSettings() {
+      paintSettingList.innerHTML = "";
+      settings.paints.forEach(function (p, idx) {
+        var row = document.createElement("div");
+        row.className = "item-row";
+        row.innerHTML =
+          '<div class="input-wrap item-name"><input type="text" value="' + escapeHtml(p.name) + '"></div>' +
+          '<div class="input-wrap item-price"><input type="number" value="' + p.price + '"></div>' +
+          '<button type="button">Fjern</button>';
+        var nameInput = row.querySelector(".item-name input");
+        var priceInput = row.querySelector(".item-price input");
+        nameInput.addEventListener("input", function () { settings.paints[idx].name = nameInput.value; });
+        priceInput.addEventListener("input", function () { settings.paints[idx].price = parseFloat(priceInput.value) || 0; });
+        row.querySelector("button").addEventListener("click", function () {
+          settings.paints.splice(idx, 1);
+          if (state.paintIdx === idx) state.paintIdx = settings.paints.length ? 0 : -1;
+          else if (state.paintIdx > idx) state.paintIdx--;
+          renderPaintSettings();
+        });
+        paintSettingList.appendChild(row);
+      });
+    }
+    renderPaintSettings();
+
+    backdrop.querySelector("#addPaintBtn").addEventListener("click", function () {
+      var nameInput = backdrop.querySelector("#newPaintName");
+      var priceInput = backdrop.querySelector("#newPaintPrice");
+      var name = nameInput.value.trim();
+      var price = parseFloat(priceInput.value) || 0;
+      if (!name) return;
+      settings.paints.push({ name: name, price: price });
+      nameInput.value = "";
+      priceInput.value = "";
+      renderPaintSettings();
+    });
+
+    var interiorSettingList = backdrop.querySelector("#interiorSettingList");
+    function renderInteriorSettings() {
+      interiorSettingList.innerHTML = "";
+      settings.interiors.forEach(function (it, idx) {
+        var row = document.createElement("div");
+        row.className = "item-row";
+        row.innerHTML =
+          '<div class="input-wrap item-name"><input type="text" value="' + escapeHtml(it.name) + '"></div>' +
+          '<div class="input-wrap item-price"><input type="number" value="' + it.price + '"></div>' +
+          '<button type="button">Fjern</button>';
+        var nameInput = row.querySelector(".item-name input");
+        var priceInput = row.querySelector(".item-price input");
+        nameInput.addEventListener("input", function () { settings.interiors[idx].name = nameInput.value; });
+        priceInput.addEventListener("input", function () { settings.interiors[idx].price = parseFloat(priceInput.value) || 0; });
+        row.querySelector("button").addEventListener("click", function () {
+          settings.interiors.splice(idx, 1);
+          if (state.interiorIdx === idx) state.interiorIdx = settings.interiors.length ? 0 : -1;
+          else if (state.interiorIdx > idx) state.interiorIdx--;
+          renderInteriorSettings();
+        });
+        interiorSettingList.appendChild(row);
+      });
+    }
+    renderInteriorSettings();
+
+    backdrop.querySelector("#addInteriorBtn").addEventListener("click", function () {
+      var nameInput = backdrop.querySelector("#newInteriorName");
+      var priceInput = backdrop.querySelector("#newInteriorPrice");
+      var name = nameInput.value.trim();
+      var price = parseFloat(priceInput.value) || 0;
+      if (!name) return;
+      settings.interiors.push({ name: name, price: price });
+      nameInput.value = "";
+      priceInput.value = "";
+      renderInteriorSettings();
+    });
+
     var extraSettingList = backdrop.querySelector("#extraSettingList");
     function renderExtraSettings() {
       extraSettingList.innerHTML = "";
@@ -629,6 +838,8 @@
       settings.secret = secretSetting.value.trim();
       saveSettings(settings);
       renderModels();
+      renderPaints();
+      renderInteriors();
       renderExtras();
       updateSummary();
       document.body.removeChild(backdrop);
@@ -642,6 +853,8 @@
   }
 
   renderModels();
+  renderPaints();
+  renderInteriors();
   renderExtras();
   updateSummary();
 
