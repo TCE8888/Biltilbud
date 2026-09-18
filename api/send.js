@@ -207,11 +207,18 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const cleanPaint = paint && typeof paint.name === "string" && typeof paint.price === "number" ? paint : null;
-  const cleanInterior = interior && typeof interior.name === "string" && typeof interior.price === "number" ? interior : null;
-  const cleanExtras = Array.isArray(extras)
-    ? extras.filter(function (e) { return e && typeof e.name === "string" && typeof e.price === "number"; })
-    : [];
+  // Coerce rather than silently drop: a price that arrives as a numeric
+  // string (e.g. "12500" instead of 12500, which can happen if prices.json
+  // is hand-edited) should still count, not vanish from the offer.
+  function cleanItem(item) {
+    if (!item || typeof item.name !== "string" || !item.name.trim()) return null;
+    var n = Number(item.price);
+    if (!isFinite(n)) n = 0;
+    return { name: item.name, price: n };
+  }
+  const cleanPaint = cleanItem(paint);
+  const cleanInterior = cleanItem(interior);
+  const cleanExtras = Array.isArray(extras) ? extras.map(cleanItem).filter(Boolean) : [];
   const total =
     model.price +
     (cleanPaint ? cleanPaint.price : 0) +
