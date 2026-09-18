@@ -157,6 +157,13 @@ async function buildOfferPdf(data) {
     gap: 12,
   });
 
+  if (data.sellerLine) {
+    y -= 6;
+    hr();
+    text("Kontakt", { font: bold, size: 11, color: muted, gap: 16 });
+    text(data.sellerLine, { size: 12, gap: 14 });
+  }
+
   const bytes = await pdfDoc.save();
   return Buffer.from(bytes);
 }
@@ -196,7 +203,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { model, paint, interior, extras, customer, note, companyName, bcc } = body || {};
+  const { model, paint, interior, extras, customer, note, companyName, bcc, sellerName, sellerPhone } = body || {};
 
   if (!model || typeof model.name !== "string" || typeof model.price !== "number") {
     res.status(400).json({ error: "missing_model" });
@@ -233,6 +240,18 @@ module.exports = async function handler(req, res) {
   const validUntilDate = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
   const validUntilStr = fmtDate(validUntilDate);
 
+  // Who the customer should actually contact — shown in the PDF and the
+  // email text, and used as the Reply-To address so a reply reaches the
+  // salesperson instead of the shared sending account.
+  const cleanSellerName = typeof sellerName === "string" ? sellerName.trim() : "";
+  const cleanSellerPhone = typeof sellerPhone === "string" ? sellerPhone.trim() : "";
+  const replyToEmail = (typeof bcc === "string" && bcc.trim()) || process.env.REPLY_TO_EMAIL || "";
+  var sellerLineParts = [];
+  if (cleanSellerName) sellerLineParts.push(cleanSellerName);
+  if (cleanSellerPhone) sellerLineParts.push("tlf " + cleanSellerPhone);
+  if (replyToEmail) sellerLineParts.push(replyToEmail);
+  const sellerLine = sellerLineParts.join(" · ");
+
   let pdfBuffer;
   try {
     pdfBuffer = await buildOfferPdf({
@@ -246,6 +265,7 @@ module.exports = async function handler(req, res) {
       note: note || "",
       date: dateStr,
       validUntil: validUntilStr,
+      sellerLine: sellerLine,
     });
   } catch (e) {
     res.status(500).json({ error: "pdf_failed", message: String((e && e.message) || e) });
@@ -258,12 +278,16 @@ module.exports = async function handler(req, res) {
   });
 
   const greetName = customer.name ? customer.name.split(" ")[0] : "";
+  const signOff = cleanSellerName ? cleanSellerName : (companyName || "Autosalg");
+  const contactLine = sellerLine
+    ? "Har du spørsmål, ta kontakt: " + sellerLine + ".\n\n"
+    : "Ta gjerne kontakt om du har spørsmål.\n\n";
   const bodyText =
     "Hei" + (greetName ? " " + greetName : "") + ",\n\n" +
     "Vedlagt følger tilbud på " + model.name + ", totalpris " + formatNOK(total) + ".\n" +
     "Tilbudet er gyldig til " + validUntilStr + " (14 dager fra i dag).\n\n" +
-    "Ta gjerne kontakt om du har spørsmål.\n\n" +
-    "Mvh " + (companyName || "Autosalg");
+    contactLine +
+    "Mvh " + signOff + (cleanSellerName ? " / " + (companyName || "Autosalg") : "");
 
   const fromName = process.env.FROM_NAME || companyName || "Autosalg";
   const fromEmail = process.env.FROM_EMAIL || gmailUser;
@@ -282,6 +306,12 @@ module.exports = async function handler(req, res) {
   };
   if (bcc && typeof bcc === "string" && bcc.trim()) {
     mailOptions.bcc = bcc.trim();
+  }
+  // So a reply from the customer goes to the salesperson, not the shared
+  // sending account. Falls back to a general REPLY_TO_EMAIL env var if the
+  // salesperson hasn't set "Kopi til deg" in settings.
+  if (replyToEmail) {
+    mailOptions.replyTo = cleanSellerName ? cleanSellerName + " <" + replyToEmail + ">" : replyToEmail;
   }
 
   try {
