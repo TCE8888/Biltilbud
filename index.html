@@ -90,6 +90,8 @@
   .tabbar {
     display: flex; gap: 6px; background: var(--surface-sunken); padding: 4px; border-radius: 12px;
     overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    position: sticky; top: 0; z-index: 8;
+    box-shadow: 0 6px 10px -6px rgba(0,0,0,0.15);
   }
   .tabbar::-webkit-scrollbar { display: none; }
   .tabbtn {
