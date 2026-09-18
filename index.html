@@ -348,7 +348,10 @@
 
   var settings = loadSettings();
   settings.models = [];
-  var state = { modelIdx: -1, paintIdx: -1, interiorIdx: -1, extraIdxs: {} };
+  // Selections are tracked by NAME, not by array position. This means a
+  // stale/rebuilt list can never point at the wrong item or silently lose
+  // a selection — the lookup either finds the named item or it doesn't.
+  var state = { modelName: null, paintName: null, interiorName: null, extraNames: {} };
 
   var modelList = document.getElementById("modelList");
   var paintList = document.getElementById("paintList");
@@ -417,18 +420,18 @@
       modelList.innerHTML = '<div class="empty-hint">Ingen modeller registrert i prices.json ennå.</div>';
       return;
     }
-    settings.models.forEach(function (m, idx) {
+    settings.models.forEach(function (m) {
       var card = document.createElement("div");
       card.className = "pick-card";
       card.setAttribute("role", "button");
-      card.setAttribute("aria-pressed", state.modelIdx === idx ? "true" : "false");
+      card.setAttribute("aria-pressed", state.modelName === m.name ? "true" : "false");
       card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(m.name) + '</span><span class="pick-price">' + formatNOK(m.price) + '</span>';
       card.addEventListener("click", function () {
-        if (state.modelIdx !== idx) {
-          state.modelIdx = idx;
-          state.paintIdx = (settings.models[idx].paints && settings.models[idx].paints.length) ? 0 : -1;
-          state.interiorIdx = (settings.models[idx].interiors && settings.models[idx].interiors.length) ? 0 : -1;
-          state.extraIdxs = {};
+        if (state.modelName !== m.name) {
+          state.modelName = m.name;
+          state.paintName = (m.paints && m.paints.length) ? m.paints[0].name : null;
+          state.interiorName = (m.interiors && m.interiors.length) ? m.interiors[0].name : null;
+          state.extraNames = {};
           renderModels();
           renderPaints();
           renderInteriors();
@@ -465,14 +468,14 @@
       paintList.innerHTML = '<div class="empty-hint">Ingen lakkfarger registrert for ' + escapeHtml(model.name) + '.</div>';
       return;
     }
-    paints.forEach(function (p, idx) {
+    paints.forEach(function (p) {
       var card = document.createElement("div");
       card.className = "pick-card";
       card.setAttribute("role", "button");
-      card.setAttribute("aria-pressed", state.paintIdx === idx ? "true" : "false");
+      card.setAttribute("aria-pressed", state.paintName === p.name ? "true" : "false");
       card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(p.name) + '</span><span class="pick-price">' + (p.price ? formatNOK(p.price) : "Inkludert") + '</span>';
       card.addEventListener("click", function () {
-        state.paintIdx = idx;
+        state.paintName = p.name;
         renderPaints();
         updateSummary();
       });
@@ -492,14 +495,14 @@
       interiorList.innerHTML = '<div class="empty-hint">Ingen interiørvalg registrert for ' + escapeHtml(model.name) + '.</div>';
       return;
     }
-    interiors.forEach(function (it, idx) {
+    interiors.forEach(function (it) {
       var card = document.createElement("div");
       card.className = "pick-card";
       card.setAttribute("role", "button");
-      card.setAttribute("aria-pressed", state.interiorIdx === idx ? "true" : "false");
+      card.setAttribute("aria-pressed", state.interiorName === it.name ? "true" : "false");
       card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(it.name) + '</span><span class="pick-price">' + (it.price ? formatNOK(it.price) : "Inkludert") + '</span>';
       card.addEventListener("click", function () {
-        state.interiorIdx = idx;
+        state.interiorName = it.name;
         renderInteriors();
         updateSummary();
       });
@@ -519,16 +522,16 @@
       extraList.innerHTML = '<div class="empty-hint">Ingen ekstrautstyr registrert for ' + escapeHtml(model.name) + '.</div>';
       return;
     }
-    extras.forEach(function (ex, idx) {
-      var picked = !!state.extraIdxs[idx];
+    extras.forEach(function (ex) {
+      var picked = !!state.extraNames[ex.name];
       var card = document.createElement("div");
       card.className = "pick-card";
       card.setAttribute("role", "button");
       card.setAttribute("aria-pressed", picked ? "true" : "false");
       card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(ex.name) + '</span><span class="pick-price">' + formatNOK(ex.price) + '</span>';
       card.addEventListener("click", function () {
-        if (state.extraIdxs[idx]) delete state.extraIdxs[idx];
-        else state.extraIdxs[idx] = true;
+        if (state.extraNames[ex.name]) delete state.extraNames[ex.name];
+        else state.extraNames[ex.name] = true;
         renderExtras();
         updateSummary();
       });
@@ -542,20 +545,24 @@
     });
   }
 
+  function findByName(list, name) {
+    if (!name) return null;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].name === name) return list[i];
+    }
+    return null;
+  }
   function getSelectedModel() {
-    return state.modelIdx >= 0 ? settings.models[state.modelIdx] : null;
+    return findByName(settings.models, state.modelName);
   }
   function getSelectedPaint() {
-    var paints = currentPaints();
-    return state.paintIdx >= 0 ? paints[state.paintIdx] : null;
+    return findByName(currentPaints(), state.paintName);
   }
   function getSelectedInterior() {
-    var interiors = currentInteriors();
-    return state.interiorIdx >= 0 ? interiors[state.interiorIdx] : null;
+    return findByName(currentInteriors(), state.interiorName);
   }
   function getSelectedExtras() {
-    var extras = currentExtras();
-    return Object.keys(state.extraIdxs).map(function (i) { return extras[+i]; }).filter(Boolean);
+    return currentExtras().filter(function (ex) { return !!state.extraNames[ex.name]; });
   }
 
   function updateSummary() {
@@ -623,6 +630,23 @@
       showToast("Legg inn kundens e-post under fanen Kunde.");
       return;
     }
+
+    var paint = getSelectedPaint();
+    var interior = getSelectedInterior();
+    var extras = getSelectedExtras();
+
+    // Safety net: recompute the total from exactly what is about to be sent
+    // and compare it against the total currently shown on screen. If they
+    // don't match, something is wrong (stale selection, etc.) — refuse to
+    // send rather than mail out a wrong price.
+    var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
+    var computedTotal = model.price + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum;
+    if (formatNOK(computedTotal) !== summaryTotal.textContent) {
+      showToast("Fant et avvik i prisen — bytt fane og sjekk valgene før du sender igjen.");
+      updateSummary();
+      return;
+    }
+
     setSending(true);
     try {
       var res = await fetch("/api/send", {
@@ -634,9 +658,9 @@
         body: JSON.stringify({
           companyName: settings.companyName,
           model: model,
-          paint: getSelectedPaint(),
-          interior: getSelectedInterior(),
-          extras: getSelectedExtras(),
+          paint: paint,
+          interior: interior,
+          extras: extras,
           customer: {
             name: custName.value.trim(),
             phone: custPhone.value.trim(),
@@ -662,7 +686,7 @@
   }
 
   function resetForm() {
-    state.extraIdxs = {};
+    state.extraNames = {};
     custName.value = "";
     custPhone.value = "";
     custEmail.value = "";
@@ -733,10 +757,10 @@
   (async function init() {
     var prices = await loadPrices();
     settings.models = prices.models;
-    state.modelIdx = settings.models.length ? 0 : -1;
-    var firstModel = state.modelIdx >= 0 ? settings.models[0] : null;
-    state.paintIdx = (firstModel && firstModel.paints && firstModel.paints.length) ? 0 : -1;
-    state.interiorIdx = (firstModel && firstModel.interiors && firstModel.interiors.length) ? 0 : -1;
+    var firstModel = settings.models.length ? settings.models[0] : null;
+    state.modelName = firstModel ? firstModel.name : null;
+    state.paintName = (firstModel && firstModel.paints && firstModel.paints.length) ? firstModel.paints[0].name : null;
+    state.interiorName = (firstModel && firstModel.interiors && firstModel.interiors.length) ? firstModel.interiors[0].name : null;
 
     renderModels();
     renderPaints();
