@@ -1,7 +1,33 @@
 {
   "models": [
     {
-      "name": "Modell 1",
+      "name": "BYD Evo 4x4",
+      "price": 409900,
+      "extras": [
+        { "name": "Vinterhjulsett UP", "price": 30625 },
+        { "name": "Vinterhjulsett MP", "price": 31125 },
+        { "name": "Tilhengerfeste", "price": 18970 },
+        { "name": "Ladekabel", "price": 4500 },
+        { "name": "Baggasjeromsmatte", "price": 1875 },
+        { "name": "Gummimatter", "price": 1875 },
+        { "name": "Understellsbehandling", "price": 4375 },
+        { "name": "Lakkbehandling", "price": 11990 }
+      ],
+      "paints": [
+        { "name": "Skiing white", "price": 0 },
+        { "name": "Obsidian black", "price": 12500 },
+        { "name": "Time grey", "price": 12500 },
+        { "name": "Iris blue", "price": 12500 },
+        { "name": "Atlantis blue", "price": 12500 },
+        { "name": "Ruby red", "price": 12500 }
+      ],
+      "interiors": [
+        { "name": "Grey", "price": 0 },
+        { "name": "Beige", "price": 10000 }
+      ]
+    },
+    {
+      "name": "BYD Sealion 7",
       "price": 0,
       "extras": [
         { "name": "Vinterhjulsett", "price": 0 },
@@ -27,7 +53,7 @@
       ]
     },
     {
-      "name": "Modell 2",
+      "name": "BYD Seal 4x4",
       "price": 0,
       "extras": [
         { "name": "Vinterhjulsett", "price": 0 },
@@ -53,7 +79,7 @@
       ]
     },
     {
-      "name": "Modell 3",
+      "name": "BYD Dolphin",
       "price": 0,
       "extras": [
         { "name": "Vinterhjulsett", "price": 0 },
@@ -79,33 +105,7 @@
       ]
     },
     {
-      "name": "Modell 4",
-      "price": 0,
-      "extras": [
-        { "name": "Vinterhjulsett", "price": 0 },
-        { "name": "Skinnseter", "price": 0 },
-        { "name": "Tilhengerfeste", "price": 0 },
-        { "name": "Soltak", "price": 0 },
-        { "name": "Head-up display", "price": 0 },
-        { "name": "Ryggekamera", "price": 0 },
-        { "name": "Adaptiv cruisekontroll", "price": 0 },
-        { "name": "Varme i ratt", "price": 0 }
-      ],
-      "paints": [
-        { "name": "Hvit", "price": 0 },
-        { "name": "Sort metallic", "price": 0 },
-        { "name": "Grå metallic", "price": 0 },
-        { "name": "Blå metallic", "price": 0 },
-        { "name": "Rød metallic", "price": 0 },
-        { "name": "Sølv metallic", "price": 0 }
-      ],
-      "interiors": [
-        { "name": "Mørkt brunt interiør", "price": 0 },
-        { "name": "Lyst brunt interiør", "price": 0 }
-      ]
-    },
-    {
-      "name": "Modell 5",
+      "name": "BYD Tang long range",
       "price": 0,
       "extras": [
         { "name": "Vinterhjulsett", "price": 0 },
