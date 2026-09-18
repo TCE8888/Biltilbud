@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biltilbud</title>
+<meta name="description" content="Sett sammen et nybil-tilbud og send det rett til kunden.">
+<meta name="theme-color" content="#2f6f5e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Biltilbud">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" href="/icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --surface-sunken: #efece3;
+    --ink: #1d2420;
+    --muted: #6c756e;
+    --line: #e2ddd0;
+    --accent: #2f6f5e;
+    --accent-strong: #1d4c40;
+    --accent-tint: #e4efe9;
+    --warn: #a8541f;
+    --warn-tint: #f5e7db;
+    --shadow: 0 1px 2px rgba(29,36,32,0.06), 0 6px 16px rgba(29,36,32,0.06);
+    --radius: 14px;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141a17;
+      --surface: #1c2420;
+      --surface-sunken: #222b26;
+      --ink: #eceae3;
+      --muted: #98a39a;
+      --line: #2c3833;
+      --accent: #58ab92;
+      --accent-strong: #7fc4ab;
+      --accent-tint: #22332c;
+      --warn: #e2a273;
+      --warn-tint: #35291f;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  [hidden] { display: none !important; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  header {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 18px; background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: baseline; gap: 8px; }
+  .brand-mark {
+    font-family: "IBM Plex Mono", monospace; font-weight: 700; font-size: 11px; letter-spacing: 0.09em;
+    color: var(--accent-strong); background: var(--accent-tint); border: 1px solid var(--accent);
+    border-radius: 6px; padding: 2px 6px;
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .icon-btn {
+    appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+    cursor: pointer; font-size: 17px; flex: none;
+  }
+  .icon-btn:active { transform: translateY(1px); }
+
+  main {
+    flex: 1; overflow-y: auto; padding: 14px 18px 12px; display: flex; flex-direction: column; gap: 16px;
+    max-width: 480px; width: 100%; margin: 0 auto;
+  }
+
+  .tabbar { display: flex; gap: 6px; background: var(--surface-sunken); padding: 4px; border-radius: 12px; }
+  .tabbtn {
+    flex: 1; appearance: none; border: none; background: transparent; color: var(--muted);
+    font-family: "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 13px; padding: 10px 6px;
+    border-radius: 9px; cursor: pointer;
+  }
+  .tabbtn[aria-selected="true"] { background: var(--surface); color: var(--accent-strong); box-shadow: var(--shadow); }
+
+  .field-label {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;
+  }
+
+  .model-list, .extra-list { display: flex; flex-direction: column; gap: 8px; }
+  .pick-card {
+    display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px 14px; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .pick-card[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset, var(--shadow); }
+  .pick-mark {
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); flex: none;
+    display: grid; place-items: center;
+  }
+  .pick-card[aria-pressed="true"] .pick-mark { border-color: var(--accent); background: var(--accent); }
+  .pick-card[aria-pressed="true"] .pick-mark::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+  .extra-list .pick-mark { border-radius: 6px; }
+  .extra-list .pick-card[aria-pressed="true"] .pick-mark::after { width: 10px; height: 10px; border-radius: 2px; }
+  .pick-name { flex: 1; font-size: 15px; font-weight: 500; }
+  .pick-price { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .pick-card[aria-pressed="true"] .pick-price { color: var(--accent-strong); }
+  .empty-hint { color: var(--muted); font-size: 13px; padding: 10px 2px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .input-wrap { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 11px 13px; }
+  .input-wrap:focus-within { border-color: var(--accent); }
+  .input-wrap input, .input-wrap textarea {
+    border: none; outline: none; background: transparent; color: var(--ink);
+    font-family: "IBM Plex Sans", sans-serif; font-size: 15px; width: 100%;
+  }
+  .input-wrap textarea { resize: none; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .summary-card {
+    border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);
+    box-shadow: var(--shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .summary-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .summary-row span:last-child { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+  .summary-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--line); }
+  .summary-total span:first-child { font-weight: 600; font-size: 14px; }
+  .summary-total span:last-child { font-family: "IBM Plex Mono", monospace; font-weight: 700; font-size: 19px; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
+
+  footer { position: sticky; bottom: 0; padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, var(--bg) 60%, transparent); }
+  .send-btn {
+    max-width: 480px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 15px;
+    font-family: "IBM Plex Sans", sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .send-btn:disabled { background: var(--surface-sunken); color: var(--muted); box-shadow: none; cursor: not-allowed; }
+  .send-btn:not(:disabled):active { background: var(--accent-strong); }
+  .send-btn svg { width: 18px; height: 18px; }
+  .send-btn .spinner {
+    width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+    animation: spin 0.7s linear infinite; flex: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 8px);
+    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 500;
+    box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 30; max-width: 80vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
+  .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,26,23,0.45); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+  .sheet { background: var(--bg); width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 0px)); max-height: 85vh; overflow-y: auto; box-shadow: 0 -8px 30px rgba(0,0,0,0.25); }
+  .sheet h2 { font-size: 16px; margin: 0 0 4px; }
+  .sheet p.hint { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .sheet-section { margin-bottom: 20px; }
+  .sheet-section:last-of-type { margin-bottom: 8px; }
+  .item-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .item-row { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+  .item-row .input-wrap { padding: 6px 10px; }
+  .item-row .item-name { flex: 1.4; }
+  .item-row .item-price { flex: 1; }
+  .item-row .item-price input { text-align: right; }
+  .item-row button { appearance: none; border: none; background: transparent; color: var(--warn); font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 4px; flex: none; }
+  .add-row { display: flex; gap: 8px; align-items: center; }
+  .add-row .input-wrap { padding: 8px 10px; }
+  .add-row .item-name { flex: 1.4; }
+  .add-row .item-price { flex: 1; }
+  .add-row .item-price input { text-align: right; }
+  .add-row button { background: var(--accent-tint); color: var(--accent-strong); border: 1px solid var(--accent); border-radius: 10px; padding: 0 14px; font-weight: 600; cursor: pointer; flex: none; height: 38px; }
+  .sheet-close { width: 100%; background: var(--ink); color: var(--bg); border: none; border-radius: 12px; padding: 13px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 4px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Biltilbud</h1>
+    <span class="brand-mark">TC</span>
+  </div>
+  <button class="icon-btn" id="settingsBtn" aria-label="Innstillinger" title="Innstillinger">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+  </button>
+</header>
+
+<main>
+  <div class="tabbar" role="tablist">
+    <button class="tabbtn" id="tabBtnModel" role="tab" aria-selected="true">Modell</button>
+    <button class="tabbtn" id="tabBtnExtras" role="tab" aria-selected="false">Ekstrautstyr</button>
+    <button class="tabbtn" id="tabBtnCustomer" role="tab" aria-selected="false">Kunde</button>
+  </div>
+
+  <section id="panelModel">
+    <span class="field-label">Velg modell</span>
+    <div class="model-list" id="modelList"></div>
+  </section>
+
+  <section id="panelExtras" hidden>
+    <span class="field-label">Velg ekstrautstyr</span>
+    <div class="extra-list" id="extraList"></div>
+  </section>
+
+  <section id="panelCustomer" hidden>
+    <span class="field-label">Kundeopplysninger</span>
+    <div class="field">
+      <div class="input-wrap"><input type="text" id="custName" placeholder="Navn"></div>
+    </div>
+    <div class="row2" style="margin-bottom:14px;">
+      <div class="input-wrap"><input type="tel" id="custPhone" placeholder="Telefon"></div>
+      <div class="input-wrap"><input type="email" id="custEmail" placeholder="E-post"></div>
+    </div>
+    <div class="field">
+      <span class="field-label">Notat <span style="text-transform:none;font-weight:400;">(valgfritt)</span></span>
+      <div class="input-wrap"><textarea id="custNote" rows="2" placeholder="F.eks. leveringstid eller innbytte"></textarea></div>
+    </div>
+  </section>
+
+  <div class="summary-card">
+    <div class="summary-row" id="summaryModelRow"><span>Modell</span><span>–</span></div>
+    <div class="summary-row" id="summaryExtrasRow" hidden><span>Ekstrautstyr</span><span>–</span></div>
+    <div class="summary-total"><span>Totalpris</span><span id="summaryTotal">0 kr</span></div>
+  </div>
+</main>
+
+<footer>
+  <button class="send-btn" id="sendBtn" disabled>
+    <svg id="sendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    <span id="sendLabel">Send tilbud til kunde</span>
+  </button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var DEFAULTS = {
+    companyName: "Autosalg",
+    dealerEmail: "",
+    secret: "",
+    models: [
+      { name: "Modell A", price: 350000 },
+      { name: "Modell B", price: 420000 },
+      { name: "Modell C", price: 510000 }
+    ],
+    extras: [
+      { name: "Vinterhjulsett", price: 12000 },
+      { name: "Skinnseter", price: 18000 },
+      { name: "Tilhengerfeste", price: 8000 },
+      { name: "Metallic lakk", price: 9000 }
+    ]
+  };
+
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem("biltilbud.settings");
+      if (raw) {
+        var p = JSON.parse(raw);
+        return {
+          companyName: typeof p.companyName === "string" && p.companyName ? p.companyName : DEFAULTS.companyName,
+          dealerEmail: typeof p.dealerEmail === "string" ? p.dealerEmail : DEFAULTS.dealerEmail,
+          secret: typeof p.secret === "string" ? p.secret : DEFAULTS.secret,
+          models: Array.isArray(p.models) && p.models.length ? p.models : DEFAULTS.models.slice(),
+          extras: Array.isArray(p.extras) ? p.extras : DEFAULTS.extras.slice()
+        };
+      }
+    } catch (e) {}
+    return {
+      companyName: DEFAULTS.companyName,
+      dealerEmail: DEFAULTS.dealerEmail,
+      secret: DEFAULTS.secret,
+      models: DEFAULTS.models.slice(),
+      extras: DEFAULTS.extras.slice()
+    };
+  }
+
+  function saveSettings(s) {
+    try { localStorage.setItem("biltilbud.settings", JSON.stringify(s)); } catch (e) {}
+  }
+
+  var settings = loadSettings();
+  var state = { modelIdx: settings.models.length ? 0 : -1, extraIdxs: {} };
+
+  var modelList = document.getElementById("modelList");
+  var extraList = document.getElementById("extraList");
+  var tabBtnModel = document.getElementById("tabBtnModel");
+  var tabBtnExtras = document.getElementById("tabBtnExtras");
+  var tabBtnCustomer = document.getElementById("tabBtnCustomer");
+  var panelModel = document.getElementById("panelModel");
+  var panelExtras = document.getElementById("panelExtras");
+  var panelCustomer = document.getElementById("panelCustomer");
+  var custName = document.getElementById("custName");
+  var custPhone = document.getElementById("custPhone");
+  var custEmail = document.getElementById("custEmail");
+  var custNote = document.getElementById("custNote");
+  var summaryModelRow = document.getElementById("summaryModelRow");
+  var summaryExtrasRow = document.getElementById("summaryExtrasRow");
+  var summaryTotal = document.getElementById("summaryTotal");
+  var sendBtn = document.getElementById("sendBtn");
+  var sendLabel = document.getElementById("sendLabel");
+  var sendIcon = document.getElementById("sendIcon");
+  var toast = document.getElementById("toast");
+  var settingsBtn = document.getElementById("settingsBtn");
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { toast.classList.remove("show"); }, 3200);
+  }
+
+  function formatNOK(n) {
+    var v = Math.round(Number(n) || 0);
+    return v.toLocaleString("nb-NO") + " kr";
+  }
+
+  var tabs = [
+    { btn: tabBtnModel, panel: panelModel },
+    { btn: tabBtnExtras, panel: panelExtras },
+    { btn: tabBtnCustomer, panel: panelCustomer }
+  ];
+  function selectTab(idx) {
+    tabs.forEach(function (t, i) {
+      var on = i === idx;
+      t.btn.setAttribute("aria-selected", on ? "true" : "false");
+      t.panel.hidden = !on;
+    });
+  }
+  tabBtnModel.addEventListener("click", function () { selectTab(0); });
+  tabBtnExtras.addEventListener("click", function () { selectTab(1); });
+  tabBtnCustomer.addEventListener("click", function () { selectTab(2); });
+
+  function renderModels() {
+    modelList.innerHTML = "";
+    if (!settings.models.length) {
+      modelList.innerHTML = '<div class="empty-hint">Ingen modeller lagt inn ennå — legg til under innstillinger ⚙.</div>';
+      return;
+    }
+    settings.models.forEach(function (m, idx) {
+      var card = document.createElement("div");
+      card.className = "pick-card";
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-pressed", state.modelIdx === idx ? "true" : "false");
+      card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(m.name) + '</span><span class="pick-price">' + formatNOK(m.price) + '</span>';
+      card.addEventListener("click", function () {
+        state.modelIdx = idx;
+        renderModels();
+        updateSummary();
+      });
+      modelList.appendChild(card);
+    });
+  }
+
+  function renderExtras() {
+    extraList.innerHTML = "";
+    if (!settings.extras.length) {
+      extraList.innerHTML = '<div class="empty-hint">Ingen ekstrautstyr lagt inn ennå — legg til under innstillinger ⚙.</div>';
+      return;
+    }
+    settings.extras.forEach(function (ex, idx) {
+      var picked = !!state.extraIdxs[idx];
+      var card = document.createElement("div");
+      card.className = "pick-card";
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-pressed", picked ? "true" : "false");
+      card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(ex.name) + '</span><span class="pick-price">' + formatNOK(ex.price) + '</span>';
+      card.addEventListener("click", function () {
+        if (state.extraIdxs[idx]) delete state.extraIdxs[idx];
+        else state.extraIdxs[idx] = true;
+        renderExtras();
+        updateSummary();
+      });
+      extraList.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function getSelectedModel() {
+    return state.modelIdx >= 0 ? settings.models[state.modelIdx] : null;
+  }
+  function getSelectedExtras() {
+    return Object.keys(state.extraIdxs).map(function (i) { return settings.extras[+i]; }).filter(Boolean);
+  }
+
+  function updateSummary() {
+    var model = getSelectedModel();
+    var extras = getSelectedExtras();
+    var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
+    summaryModelRow.querySelector("span:last-child").textContent = model ? (model.name + " · " + formatNOK(model.price)) : "–";
+    if (extras.length) {
+      summaryExtrasRow.hidden = false;
+      summaryExtrasRow.querySelector("span:last-child").textContent = extras.length + " valgt · " + formatNOK(extrasSum);
+    } else {
+      summaryExtrasRow.hidden = true;
+    }
+    var total = (model ? model.price : 0) + extrasSum;
+    summaryTotal.textContent = formatNOK(total);
+    updateSendState();
+  }
+
+  function updateSendState() {
+    var model = getSelectedModel();
+    var emailOk = custEmail.value.trim().length > 3 && custEmail.value.indexOf("@") !== -1;
+    sendBtn.disabled = !(model && emailOk);
+  }
+
+  custEmail.addEventListener("input", updateSendState);
+
+  function setSending(isSending) {
+    sendBtn.disabled = isSending || sendBtn.disabled;
+    if (!isSending) updateSendState();
+    sendIcon.style.display = isSending ? "none" : "";
+    var spinner = document.getElementById("sendSpinner");
+    if (isSending && !spinner) {
+      spinner = document.createElement("span");
+      spinner.id = "sendSpinner";
+      spinner.className = "spinner";
+      sendBtn.insertBefore(spinner, sendLabel);
+    }
+    if (spinner) spinner.style.display = isSending ? "" : "none";
+    sendLabel.textContent = isSending ? "Sender …" : "Send tilbud til kunde";
+  }
+
+  async function send() {
+    var model = getSelectedModel();
+    if (!model) return;
+    var email = custEmail.value.trim();
+    if (!email) {
+      showToast("Legg inn kundens e-post under fanen Kunde.");
+      return;
+    }
+    setSending(true);
+    try {
+      var res = await fetch("/api/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-app-secret": settings.secret || ""
+        },
+        body: JSON.stringify({
+          companyName: settings.companyName,
+          model: model,
+          extras: getSelectedExtras(),
+          customer: {
+            name: custName.value.trim(),
+            phone: custPhone.value.trim(),
+            email: email
+          },
+          note: custNote.value.trim(),
+          bcc: settings.dealerEmail || ""
+        })
+      });
+      if (res.ok) {
+        showToast("Tilbudet er sendt til kunden.");
+        resetForm();
+      } else {
+        var data = await res.json().catch(function () { return {}; });
+        if (res.status === 401) showToast("Feil nøkkel — sjekk innstillinger ⚙.");
+        else showToast("Kunne ikke sende (" + (data.error || res.status) + "). Prøv igjen.");
+      }
+    } catch (e) {
+      showToast("Ingen kontakt med tjenesten. Sjekk internett og prøv igjen.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function resetForm() {
+    state.extraIdxs = {};
+    custName.value = "";
+    custPhone.value = "";
+    custEmail.value = "";
+    custNote.value = "";
+    renderExtras();
+    updateSummary();
+    selectTab(0);
+  }
+
+  sendBtn.addEventListener("click", send);
+  settingsBtn.addEventListener("click", openSettings);
+
+  function openSettings() {
+    var backdrop = document.createElement("div");
+    backdrop.className = "sheet-backdrop";
+    backdrop.innerHTML =
+      '<div class="sheet" role="dialog" aria-label="Innstillinger">' +
+        '<div class="sheet-section">' +
+          '<h2>Bedrift</h2>' +
+          '<p class="hint">Vises øverst på tilbudet kunden mottar.</p>' +
+          '<div class="input-wrap"><input type="text" id="companySetting" placeholder="Firmanavn"></div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Kopi til deg</h2>' +
+          '<p class="hint">Du får automatisk en skjult kopi (BCC) av hvert tilbud som sendes.</p>' +
+          '<div class="input-wrap"><input type="email" id="dealerEmailSetting" placeholder="din@epost.no"></div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Modeller</h2>' +
+          '<p class="hint">Modell og pris kunden kan velge mellom.</p>' +
+          '<div class="item-list" id="modelSettingList"></div>' +
+          '<div class="add-row">' +
+            '<div class="input-wrap item-name"><input type="text" id="newModelName" placeholder="Modellnavn"></div>' +
+            '<div class="input-wrap item-price"><input type="number" id="newModelPrice" placeholder="Pris"></div>' +
+            '<button type="button" id="addModelBtn">Legg til</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Ekstrautstyr</h2>' +
+          '<p class="hint">Alt kunden kan hake av, med pris.</p>' +
+          '<div class="item-list" id="extraSettingList"></div>' +
+          '<div class="add-row">' +
+            '<div class="input-wrap item-name"><input type="text" id="newExtraName" placeholder="Utstyrsnavn"></div>' +
+            '<div class="input-wrap item-price"><input type="number" id="newExtraPrice" placeholder="Pris"></div>' +
+            '<button type="button" id="addExtraBtn">Legg til</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Nøkkel</h2>' +
+          '<p class="hint">Samme nøkkel som du satte opp i Vercel (APP_SECRET).</p>' +
+          '<div class="input-wrap"><input type="text" id="secretSetting" placeholder="Nøkkel" autocapitalize="off" autocorrect="off"></div>' +
+        '</div>' +
+        '<button class="sheet-close" id="closeSettings">Ferdig</button>' +
+      '</div>';
+    document.body.appendChild(backdrop);
+
+    var companySetting = backdrop.querySelector("#companySetting");
+    companySetting.value = settings.companyName;
+    var dealerEmailSetting = backdrop.querySelector("#dealerEmailSetting");
+    dealerEmailSetting.value = settings.dealerEmail;
+    var secretSetting = backdrop.querySelector("#secretSetting");
+    secretSetting.value = settings.secret;
+
+    var modelSettingList = backdrop.querySelector("#modelSettingList");
+    function renderModelSettings() {
+      modelSettingList.innerHTML = "";
+      settings.models.forEach(function (m, idx) {
+        var row = document.createElement("div");
+        row.className = "item-row";
+        row.innerHTML =
+          '<div class="input-wrap item-name"><input type="text" value="' + escapeHtml(m.name) + '"></div>' +
+          '<div class="input-wrap item-price"><input type="number" value="' + m.price + '"></div>' +
+          '<button type="button">Fjern</button>';
+        var nameInput = row.querySelector(".item-name input");
+        var priceInput = row.querySelector(".item-price input");
+        nameInput.addEventListener("input", function () { settings.models[idx].name = nameInput.value; });
+        priceInput.addEventListener("input", function () { settings.models[idx].price = parseFloat(priceInput.value) || 0; });
+        row.querySelector("button").addEventListener("click", function () {
+          settings.models.splice(idx, 1);
+          if (state.modelIdx === idx) state.modelIdx = settings.models.length ? 0 : -1;
+          else if (state.modelIdx > idx) state.modelIdx--;
+          renderModelSettings();
+        });
+        modelSettingList.appendChild(row);
+      });
+    }
+    renderModelSettings();
+
+    backdrop.querySelector("#addModelBtn").addEventListener("click", function () {
+      var nameInput = backdrop.querySelector("#newModelName");
+      var priceInput = backdrop.querySelector("#newModelPrice");
+      var name = nameInput.value.trim();
+      var price = parseFloat(priceInput.value) || 0;
+      if (!name) return;
+      settings.models.push({ name: name, price: price });
+      nameInput.value = "";
+      priceInput.value = "";
+      renderModelSettings();
+    });
+
+    var extraSettingList = backdrop.querySelector("#extraSettingList");
+    function renderExtraSettings() {
+      extraSettingList.innerHTML = "";
+      settings.extras.forEach(function (ex, idx) {
+        var row = document.createElement("div");
+        row.className = "item-row";
+        row.innerHTML =
+          '<div class="input-wrap item-name"><input type="text" value="' + escapeHtml(ex.name) + '"></div>' +
+          '<div class="input-wrap item-price"><input type="number" value="' + ex.price + '"></div>' +
+          '<button type="button">Fjern</button>';
+        var nameInput = row.querySelector(".item-name input");
+        var priceInput = row.querySelector(".item-price input");
+        nameInput.addEventListener("input", function () { settings.extras[idx].name = nameInput.value; });
+        priceInput.addEventListener("input", function () { settings.extras[idx].price = parseFloat(priceInput.value) || 0; });
+        row.querySelector("button").addEventListener("click", function () {
+          settings.extras.splice(idx, 1);
+          delete state.extraIdxs[idx];
+          renderExtraSettings();
+        });
+        extraSettingList.appendChild(row);
+      });
+    }
+    renderExtraSettings();
+
+    backdrop.querySelector("#addExtraBtn").addEventListener("click", function () {
+      var nameInput = backdrop.querySelector("#newExtraName");
+      var priceInput = backdrop.querySelector("#newExtraPrice");
+      var name = nameInput.value.trim();
+      var price = parseFloat(priceInput.value) || 0;
+      if (!name) return;
+      settings.extras.push({ name: name, price: price });
+      nameInput.value = "";
+      priceInput.value = "";
+      renderExtraSettings();
+    });
+
+    function closeAndSave() {
+      settings.companyName = companySetting.value.trim() || DEFAULTS.companyName;
+      settings.dealerEmail = dealerEmailSetting.value.trim();
+      settings.secret = secretSetting.value.trim();
+      saveSettings(settings);
+      renderModels();
+      renderExtras();
+      updateSummary();
+      document.body.removeChild(backdrop);
+      showToast("Lagret.");
+    }
+
+    backdrop.querySelector("#closeSettings").addEventListener("click", closeAndSave);
+    backdrop.addEventListener("click", function (e) {
+      if (e.target === backdrop) closeAndSave();
+    });
+  }
+
+  renderModels();
+  renderExtras();
+  updateSummary();
+
+  if (!settings.secret) {
+    setTimeout(function () {
+      showToast("Fullfør oppsettet under innstillinger ⚙ (nøkkel).");
+    }, 600);
+  }
+})();
+</script>
+</body>
+</html>

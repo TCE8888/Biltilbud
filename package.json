@@ -1,0 +1,16 @@
+{
+  "name": "biltilbud-app",
+  "version": "1.0.0",
+  "description": "Bygg og send nybil-tilbud til kunde med modell, ekstrautstyr og pris.",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "nodemailer": "^10.0.10",
+    "pdf-lib": "^1.17.1"
+  }
+}
