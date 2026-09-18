@@ -213,6 +213,7 @@
     <button class="tabbtn" id="tabBtnPaint" role="tab" aria-selected="false">Lakk</button>
     <button class="tabbtn" id="tabBtnInterior" role="tab" aria-selected="false">Interiør</button>
     <button class="tabbtn" id="tabBtnExtras" role="tab" aria-selected="false">Ekstrautstyr</button>
+    <button class="tabbtn" id="tabBtnTradeIn" role="tab" aria-selected="false">Innbytte</button>
     <button class="tabbtn" id="tabBtnCustomer" role="tab" aria-selected="false">Kunde</button>
   </div>
 </div>
@@ -238,6 +239,17 @@
     <div class="extra-list" id="extraList"></div>
   </section>
 
+  <section id="panelTradeIn" hidden>
+    <span class="field-label">Innbyttebil <span style="text-transform:none;font-weight:400;">(valgfritt)</span></span>
+    <div class="field">
+      <div class="input-wrap"><input type="text" id="tradeInDesc" placeholder="F.eks. VW Golf 2018, reg.nr AB12345"></div>
+    </div>
+    <div class="field">
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="tradeInValue" placeholder="Verdi (kr)"></div>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin:0;">Verdien trekkes fra totalprisen i tilbudet. La feltene stå tomme hvis kunden ikke har innbytte.</p>
+  </section>
+
   <section id="panelCustomer" hidden>
     <span class="field-label">Kundeopplysninger</span>
     <div class="field">
@@ -258,6 +270,7 @@
     <div class="summary-row" id="summaryPaintRow" hidden><span>Lakk</span><span>–</span></div>
     <div class="summary-row" id="summaryInteriorRow" hidden><span>Interiør</span><span>–</span></div>
     <div class="summary-row" id="summaryExtrasRow" hidden><span>Ekstrautstyr</span><span>–</span></div>
+    <div class="summary-row" id="summaryTradeInRow" hidden><span>Innbytte</span><span>–</span></div>
     <div class="summary-total"><span>Totalpris</span><span id="summaryTotal">0 kr</span></div>
   </div>
 </main>
@@ -364,12 +377,16 @@
   var tabBtnPaint = document.getElementById("tabBtnPaint");
   var tabBtnInterior = document.getElementById("tabBtnInterior");
   var tabBtnExtras = document.getElementById("tabBtnExtras");
+  var tabBtnTradeIn = document.getElementById("tabBtnTradeIn");
   var tabBtnCustomer = document.getElementById("tabBtnCustomer");
   var panelModel = document.getElementById("panelModel");
   var panelPaint = document.getElementById("panelPaint");
   var panelInterior = document.getElementById("panelInterior");
   var panelExtras = document.getElementById("panelExtras");
+  var panelTradeIn = document.getElementById("panelTradeIn");
   var panelCustomer = document.getElementById("panelCustomer");
+  var tradeInDesc = document.getElementById("tradeInDesc");
+  var tradeInValue = document.getElementById("tradeInValue");
   var custName = document.getElementById("custName");
   var custPhone = document.getElementById("custPhone");
   var custEmail = document.getElementById("custEmail");
@@ -378,6 +395,7 @@
   var summaryPaintRow = document.getElementById("summaryPaintRow");
   var summaryInteriorRow = document.getElementById("summaryInteriorRow");
   var summaryExtrasRow = document.getElementById("summaryExtrasRow");
+  var summaryTradeInRow = document.getElementById("summaryTradeInRow");
   var summaryTotal = document.getElementById("summaryTotal");
   var sendBtn = document.getElementById("sendBtn");
   var sendLabel = document.getElementById("sendLabel");
@@ -402,6 +420,7 @@
     { btn: tabBtnPaint, panel: panelPaint },
     { btn: tabBtnInterior, panel: panelInterior },
     { btn: tabBtnExtras, panel: panelExtras },
+    { btn: tabBtnTradeIn, panel: panelTradeIn },
     { btn: tabBtnCustomer, panel: panelCustomer }
   ];
   function selectTab(idx) {
@@ -415,7 +434,8 @@
   tabBtnPaint.addEventListener("click", function () { selectTab(1); });
   tabBtnInterior.addEventListener("click", function () { selectTab(2); });
   tabBtnExtras.addEventListener("click", function () { selectTab(3); });
-  tabBtnCustomer.addEventListener("click", function () { selectTab(4); });
+  tabBtnTradeIn.addEventListener("click", function () { selectTab(4); });
+  tabBtnCustomer.addEventListener("click", function () { selectTab(5); });
 
   function renderModels() {
     modelList.innerHTML = "";
@@ -568,11 +588,24 @@
     return currentExtras().filter(function (ex) { return !!state.extraNames[ex.name]; });
   }
 
+  // Trade-in isn't a catalog item like model/paint/etc — it's free text plus
+  // a number the seller types in per offer, read straight from the fields.
+  // Returns null when both are empty (no trade-in on this offer).
+  function getTradeIn() {
+    var desc = tradeInDesc.value.trim();
+    var raw = tradeInValue.value.trim();
+    var value = raw ? Number(raw) : 0;
+    if (!isFinite(value) || value < 0) value = 0;
+    if (!desc && !value) return null;
+    return { description: desc, value: value };
+  }
+
   function updateSummary() {
     var model = getSelectedModel();
     var paint = getSelectedPaint();
     var interior = getSelectedInterior();
     var extras = getSelectedExtras();
+    var tradeIn = getTradeIn();
     var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
     summaryModelRow.querySelector("span:last-child").textContent = model ? (model.name + " · " + formatNOK(model.price)) : "–";
 
@@ -597,7 +630,14 @@
       summaryExtrasRow.hidden = true;
     }
 
-    var total = (model ? model.price : 0) + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum;
+    if (tradeIn && tradeIn.value) {
+      summaryTradeInRow.hidden = false;
+      summaryTradeInRow.querySelector("span:last-child").textContent = "-" + formatNOK(tradeIn.value);
+    } else {
+      summaryTradeInRow.hidden = true;
+    }
+
+    var total = (model ? model.price : 0) + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum - (tradeIn ? tradeIn.value : 0);
     summaryTotal.textContent = formatNOK(total);
     updateSendState();
   }
@@ -609,6 +649,8 @@
   }
 
   custEmail.addEventListener("input", updateSendState);
+  tradeInDesc.addEventListener("input", updateSummary);
+  tradeInValue.addEventListener("input", updateSummary);
 
   function setSending(isSending) {
     sendBtn.disabled = isSending || sendBtn.disabled;
@@ -637,13 +679,14 @@
     var paint = getSelectedPaint();
     var interior = getSelectedInterior();
     var extras = getSelectedExtras();
+    var tradeIn = getTradeIn();
 
     // Safety net: recompute the total from exactly what is about to be sent
     // and compare it against the total currently shown on screen. If they
     // don't match, something is wrong (stale selection, etc.) — refuse to
     // send rather than mail out a wrong price.
     var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
-    var computedTotal = model.price + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum;
+    var computedTotal = model.price + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum - (tradeIn ? tradeIn.value : 0);
     if (formatNOK(computedTotal) !== summaryTotal.textContent) {
       showToast("Fant et avvik i prisen — bytt fane og sjekk valgene før du sender igjen.");
       updateSummary();
@@ -664,6 +707,7 @@
           paint: paint,
           interior: interior,
           extras: extras,
+          tradeIn: tradeIn,
           customer: {
             name: custName.value.trim(),
             phone: custPhone.value.trim(),
@@ -696,6 +740,8 @@
     custPhone.value = "";
     custEmail.value = "";
     custNote.value = "";
+    tradeInDesc.value = "";
+    tradeInValue.value = "";
     renderExtras();
     updateSummary();
     selectTab(0);
