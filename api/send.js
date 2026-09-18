@@ -60,6 +60,7 @@ async function buildOfferPdf(data) {
   const ink = rgb(0.11, 0.14, 0.13);
   const muted = rgb(0.42, 0.46, 0.43);
   const line = rgb(0.89, 0.87, 0.82);
+  const warn = rgb(0.659, 0.329, 0.122); // #a8541f — used for the trade-in deduction
 
   function text(str, opts) {
     opts = opts || {};
@@ -167,11 +168,20 @@ async function buildOfferPdf(data) {
     y -= 4;
   }
 
+  if (data.tradeIn && data.tradeIn.value) {
+    text("Innbytte", { font: bold, size: 11, color: muted, gap: 16 });
+    priceRow(data.tradeIn.description || "Innbyttebil", "-" + formatNOK(data.tradeIn.value), {
+      labelSize: 12, priceSize: 12, priceColor: warn, rowGap: 18,
+    });
+    y -= 4;
+  }
+
   hr();
   var totalStr = formatNOK(data.total);
-  text("Totalpris", { font: bold, size: 13, gap: 4 });
+  var totalRowY = y; // draw label and price on the same baseline, like priceRow does
+  page.drawText("Totalpris", { x: margin, y: totalRowY, size: 13, font: bold, color: ink });
   var totalWidth = bold.widthOfTextAtSize(totalStr, 20);
-  page.drawText(totalStr, { x: pageWidth - margin - totalWidth, y: y + 22, size: 20, font: bold, color: accent });
+  page.drawText(totalStr, { x: pageWidth - margin - totalWidth, y: totalRowY - 3, size: 20, font: bold, color: accent });
   y -= 30;
 
   if (data.note) {
@@ -235,7 +245,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { model, paint, interior, extras, customer, note, companyName, bcc, sellerName, sellerPhone } = body || {};
+  const { model, paint, interior, extras, tradeIn, customer, note, companyName, bcc, sellerName, sellerPhone } = body || {};
 
   if (!model || typeof model.name !== "string" || typeof model.price !== "number") {
     res.status(400).json({ error: "missing_model" });
@@ -258,11 +268,24 @@ module.exports = async function handler(req, res) {
   const cleanPaint = cleanItem(paint);
   const cleanInterior = cleanItem(interior);
   const cleanExtras = Array.isArray(extras) ? extras.map(cleanItem).filter(Boolean) : [];
+
+  // Trade-in reduces the total rather than adding to it. A description
+  // alone with no value, or a value with no description, is still valid —
+  // only an entirely empty trade-in is dropped.
+  let cleanTradeIn = null;
+  if (tradeIn && (typeof tradeIn.description === "string" || tradeIn.value != null)) {
+    var tiDesc = typeof tradeIn.description === "string" ? tradeIn.description.trim() : "";
+    var tiValue = Number(tradeIn.value);
+    if (!isFinite(tiValue) || tiValue < 0) tiValue = 0;
+    if (tiDesc || tiValue) cleanTradeIn = { description: tiDesc, value: tiValue };
+  }
+
   const total =
     model.price +
     (cleanPaint ? cleanPaint.price : 0) +
     (cleanInterior ? cleanInterior.price : 0) +
-    cleanExtras.reduce(function (sum, e) { return sum + e.price; }, 0);
+    cleanExtras.reduce(function (sum, e) { return sum + e.price; }, 0) -
+    (cleanTradeIn ? cleanTradeIn.value : 0);
 
   function fmtDate(d) {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -293,6 +316,7 @@ module.exports = async function handler(req, res) {
       paint: cleanPaint,
       interior: cleanInterior,
       extras: cleanExtras,
+      tradeIn: cleanTradeIn,
       total: total,
       customer: customer,
       note: note || "",
