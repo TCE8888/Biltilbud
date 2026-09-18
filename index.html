@@ -291,17 +291,20 @@
         return {
           companyName: typeof p.companyName === "string" && p.companyName ? p.companyName : DEFAULTS.companyName,
           dealerEmail: typeof p.dealerEmail === "string" ? p.dealerEmail : DEFAULTS.dealerEmail,
+          sellerName: typeof p.sellerName === "string" ? p.sellerName : "",
+          sellerPhone: typeof p.sellerPhone === "string" ? p.sellerPhone : "",
           secret: typeof p.secret === "string" ? p.secret : DEFAULTS.secret
         };
       }
     } catch (e) {}
-    return { companyName: DEFAULTS.companyName, dealerEmail: DEFAULTS.dealerEmail, secret: DEFAULTS.secret };
+    return { companyName: DEFAULTS.companyName, dealerEmail: DEFAULTS.dealerEmail, sellerName: "", sellerPhone: "", secret: DEFAULTS.secret };
   }
 
   function saveSettings(s) {
     try {
       localStorage.setItem("biltilbud.settings", JSON.stringify({
-        companyName: s.companyName, dealerEmail: s.dealerEmail, secret: s.secret
+        companyName: s.companyName, dealerEmail: s.dealerEmail,
+        sellerName: s.sellerName, sellerPhone: s.sellerPhone, secret: s.secret
       }));
     } catch (e) {}
   }
@@ -667,7 +670,9 @@
             email: email
           },
           note: custNote.value.trim(),
-          bcc: settings.dealerEmail || ""
+          bcc: settings.dealerEmail || "",
+          sellerName: settings.sellerName || "",
+          sellerPhone: settings.sellerPhone || ""
         })
       });
       if (res.ok) {
@@ -711,8 +716,14 @@
         '</div>' +
         '<div class="sheet-section">' +
           '<h2>Kopi til deg</h2>' +
-          '<p class="hint">Du får automatisk en skjult kopi (BCC) av hvert tilbud som sendes.</p>' +
+          '<p class="hint">Du får automatisk en skjult kopi (BCC) av hvert tilbud som sendes. Svarer kunden på e-posten, havner svaret også her.</p>' +
           '<div class="input-wrap"><input type="email" id="dealerEmailSetting" placeholder="din@epost.no"></div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Din kontaktinfo</h2>' +
+          '<p class="hint">Vises nederst i tilbudet, så kunden vet hvem de skal kontakte.</p>' +
+          '<div class="input-wrap" style="margin-bottom:8px;"><input type="text" id="sellerNameSetting" placeholder="Ditt navn"></div>' +
+          '<div class="input-wrap"><input type="tel" id="sellerPhoneSetting" placeholder="Din telefon"></div>' +
         '</div>' +
         '<div class="sheet-section">' +
           '<h2>Priser</h2>' +
@@ -731,12 +742,18 @@
     companySetting.value = settings.companyName;
     var dealerEmailSetting = backdrop.querySelector("#dealerEmailSetting");
     dealerEmailSetting.value = settings.dealerEmail;
+    var sellerNameSetting = backdrop.querySelector("#sellerNameSetting");
+    sellerNameSetting.value = settings.sellerName || "";
+    var sellerPhoneSetting = backdrop.querySelector("#sellerPhoneSetting");
+    sellerPhoneSetting.value = settings.sellerPhone || "";
     var secretSetting = backdrop.querySelector("#secretSetting");
     secretSetting.value = settings.secret;
 
     function closeAndSave() {
       settings.companyName = companySetting.value.trim() || DEFAULTS.companyName;
       settings.dealerEmail = dealerEmailSetting.value.trim();
+      settings.sellerName = sellerNameSetting.value.trim();
+      settings.sellerPhone = sellerPhoneSetting.value.trim();
       settings.secret = secretSetting.value.trim();
       saveSettings(settings);
       renderModels();
