@@ -14,12 +14,12 @@
         { "name": "Lakkbehandling", "price": 11990 }
       ],
       "paints": [
-        { "name": "Skiing white", "price": 0 },
-        { "name": "Obsidian black", "price": 12500 },
-        { "name": "Time grey", "price": 12500 },
-        { "name": "Iris blue", "price": 12500 },
-        { "name": "Atlantis blue", "price": 12500 },
-        { "name": "Ruby red", "price": 12500 }
+        { "name": "Skiing White", "price": 0 },
+        { "name": "Obsidian Black", "price": 12500 },
+        { "name": "Time Grey", "price": 12500 },
+        { "name": "Iris Blue", "price": 12500 },
+        { "name": "Atlantis Blue", "price": 12500 },
+        { "name": "Ruby Red", "price": 12500 }
       ],
       "interiors": [
         { "name": "Grey", "price": 0 },
@@ -41,40 +41,39 @@
       ],
       "paints": [
         { "name": "Polar White", "price": 0 },
-        { "name": "Atlantis grey", "price": 15000 },
-        { "name": "Obsidian black", "price": 15000 },
-        { "name": "Indigo grey", "price": 30000 }
+        { "name": "Atlantis Grey", "price": 15000 },
+        { "name": "Obsidian Black", "price": 15000 },
+        { "name": "Indigo Grey", "price": 30000 }
        
       ],
       "interiors": [
         { "name": "Black", "price": 0 },
-        { "name": "Thaiti blue", "price": 12500 }
+        { "name": "Thaiti Blue", "price": 12500 }
       ]
     },
     {
       "name": "BYD Seal 4x4",
-      "price": 0,
+      "price": 484800,
       "extras": [
-        { "name": "Vinterhjulsett", "price": 0 },
-        { "name": "Skinnseter", "price": 0 },
-        { "name": "Tilhengerfeste", "price": 0 },
-        { "name": "Soltak", "price": 0 },
-        { "name": "Head-up display", "price": 0 },
-        { "name": "Ryggekamera", "price": 0 },
-        { "name": "Adaptiv cruisekontroll", "price": 0 },
-        { "name": "Varme i ratt", "price": 0 }
+        { "name": "Vinterhjulsett UP", "price": 39375 },
+        { "name": "Vinterhjulsett MP", "price": 40625 },
+        { "name": "Tilhengerfeste", "price": 25175 },
+        { "name": "Ladekabel", "price": 4500 },
+        { "name": "Lakkbehandling", "price": 11990 },
+        { "name": "Understellsbehandling", "price": 4375 }
+     
       ],
       "paints": [
-        { "name": "Hvit", "price": 0 },
-        { "name": "Sort metallic", "price": 0 },
-        { "name": "Grå metallic", "price": 0 },
-        { "name": "Blå metallic", "price": 0 },
-        { "name": "Rød metallic", "price": 0 },
-        { "name": "Sølv metallic", "price": 0 }
+        { "name": "Polar White", "price": 0 },
+        { "name": "Space Black", "price": 12375 },
+        { "name": "Atlantis Grey", "price": 12375 },
+        { "name": "Indigo Grey", "price": 23625 },
+        { "name": "Lavender Grey", "price": 23625 },
+        { "name": "Ruby Red", "price": 23625 }
       ],
       "interiors": [
-        { "name": "Mørkt brunt interiør", "price": 0 },
-        { "name": "Lyst brunt interiør", "price": 0 }
+        { "name": "Black", "price": 0 },
+        { "name": "Tahiti blue", "price": 12500 }
       ]
     },
     {
