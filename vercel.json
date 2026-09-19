@@ -4,5 +4,10 @@
       "path": "/api/send-reminders",
       "schedule": "0 8 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "api/send.js": {
+      "includeFiles": "*.{jpg,jpeg,png,webp}"
+    }
+  }
 }
