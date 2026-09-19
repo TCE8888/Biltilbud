@@ -215,6 +215,7 @@
     <button class="tabbtn" id="tabBtnExtras" role="tab" aria-selected="false">Ekstrautstyr</button>
     <button class="tabbtn" id="tabBtnTradeIn" role="tab" aria-selected="false">Innbytte</button>
     <button class="tabbtn" id="tabBtnDiscount" role="tab" aria-selected="false">Rabatt</button>
+    <button class="tabbtn" id="tabBtnFinancing" role="tab" aria-selected="false">Finansiering</button>
     <button class="tabbtn" id="tabBtnCustomer" role="tab" aria-selected="false">Kunde</button>
   </div>
 </div>
@@ -262,6 +263,18 @@
     <p style="color:var(--muted);font-size:13px;margin:0;">Beløpet trekkes fra totalprisen i tilbudet. La feltene stå tomme hvis det ikke gis rabatt.</p>
   </section>
 
+  <section id="panelFinancing" hidden>
+    <span class="field-label">Finansieringseksempel <span style="text-transform:none;font-weight:400;">(valgfritt)</span></span>
+    <div class="row2" style="margin-bottom:14px;">
+      <div class="input-wrap"><input type="number" inputmode="decimal" step="0.1" id="financeRate" placeholder="Rente % p.a."></div>
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="financeMonths" placeholder="Løpetid (mnd)"></div>
+    </div>
+    <div class="field">
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="financeDownPayment" placeholder="Egenkapital (kr)"></div>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin:0;">Fyll ut rente og løpetid for å vise en omtrentlig månedspris ved siden av kontantprisen. La feltene stå tomme for å utelate finansiering fra tilbudet.</p>
+  </section>
+
   <section id="panelCustomer" hidden>
     <span class="field-label">Kundeopplysninger</span>
     <div class="field">
@@ -285,6 +298,7 @@
     <div class="summary-row" id="summaryTradeInRow" hidden><span>Innbytte</span><span>–</span></div>
     <div class="summary-row" id="summaryDiscountRow" hidden><span>Rabatt</span><span>–</span></div>
     <div class="summary-total"><span>Totalpris</span><span id="summaryTotal">0 kr</span></div>
+    <div class="summary-row" id="summaryFinancingRow" hidden><span>Ca. per måned</span><span>–</span></div>
   </div>
 </main>
 
@@ -392,6 +406,7 @@
   var tabBtnExtras = document.getElementById("tabBtnExtras");
   var tabBtnTradeIn = document.getElementById("tabBtnTradeIn");
   var tabBtnDiscount = document.getElementById("tabBtnDiscount");
+  var tabBtnFinancing = document.getElementById("tabBtnFinancing");
   var tabBtnCustomer = document.getElementById("tabBtnCustomer");
   var panelModel = document.getElementById("panelModel");
   var panelPaint = document.getElementById("panelPaint");
@@ -399,11 +414,15 @@
   var panelExtras = document.getElementById("panelExtras");
   var panelTradeIn = document.getElementById("panelTradeIn");
   var panelDiscount = document.getElementById("panelDiscount");
+  var panelFinancing = document.getElementById("panelFinancing");
   var panelCustomer = document.getElementById("panelCustomer");
   var tradeInDesc = document.getElementById("tradeInDesc");
   var tradeInValue = document.getElementById("tradeInValue");
   var discountValue = document.getElementById("discountValue");
   var discountDesc = document.getElementById("discountDesc");
+  var financeRate = document.getElementById("financeRate");
+  var financeMonths = document.getElementById("financeMonths");
+  var financeDownPayment = document.getElementById("financeDownPayment");
   var custName = document.getElementById("custName");
   var custPhone = document.getElementById("custPhone");
   var custEmail = document.getElementById("custEmail");
@@ -414,6 +433,7 @@
   var summaryExtrasRow = document.getElementById("summaryExtrasRow");
   var summaryTradeInRow = document.getElementById("summaryTradeInRow");
   var summaryDiscountRow = document.getElementById("summaryDiscountRow");
+  var summaryFinancingRow = document.getElementById("summaryFinancingRow");
   var summaryTotal = document.getElementById("summaryTotal");
   var sendBtn = document.getElementById("sendBtn");
   var sendLabel = document.getElementById("sendLabel");
@@ -440,6 +460,7 @@
     { btn: tabBtnExtras, panel: panelExtras },
     { btn: tabBtnTradeIn, panel: panelTradeIn },
     { btn: tabBtnDiscount, panel: panelDiscount },
+    { btn: tabBtnFinancing, panel: panelFinancing },
     { btn: tabBtnCustomer, panel: panelCustomer }
   ];
   function selectTab(idx) {
@@ -455,7 +476,8 @@
   tabBtnExtras.addEventListener("click", function () { selectTab(3); });
   tabBtnTradeIn.addEventListener("click", function () { selectTab(4); });
   tabBtnDiscount.addEventListener("click", function () { selectTab(5); });
-  tabBtnCustomer.addEventListener("click", function () { selectTab(6); });
+  tabBtnFinancing.addEventListener("click", function () { selectTab(6); });
+  tabBtnCustomer.addEventListener("click", function () { selectTab(7); });
 
   function renderModels() {
     modelList.innerHTML = "";
@@ -632,6 +654,35 @@
     return { description: desc, value: value };
   }
 
+  // Simple annuity loan calculation (the standard "billån" in Norway) —
+  // not leasing, which is priced off a residual value instead and would
+  // need a separate calculator. Returns null unless both an interest rate
+  // and a loan term are filled in; down payment alone isn't enough to show
+  // a monthly figure.
+  function getFinancing() {
+    var rawRate = financeRate.value.trim();
+    var rawMonths = financeMonths.value.trim();
+    var rawDown = financeDownPayment.value.trim();
+    if (!rawRate && !rawMonths && !rawDown) return null;
+
+    var rate = rawRate ? Number(rawRate) : 0;
+    if (!isFinite(rate) || rate < 0) rate = 0;
+    var months = rawMonths ? Math.round(Number(rawMonths)) : 0;
+    if (!isFinite(months) || months <= 0) return null; // no loan term — nothing to show
+    var downPayment = rawDown ? Number(rawDown) : 0;
+    if (!isFinite(downPayment) || downPayment < 0) downPayment = 0;
+
+    return { rate: rate, months: months, downPayment: downPayment };
+  }
+
+  function monthlyPayment(principal, ratePct, months) {
+    var p = Math.max(0, principal);
+    var monthlyRate = ratePct / 100 / 12;
+    if (p <= 0 || months <= 0) return 0;
+    if (monthlyRate === 0) return p / months;
+    return (p * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));
+  }
+
   function updateSummary() {
     var model = getSelectedModel();
     var paint = getSelectedPaint();
@@ -639,6 +690,7 @@
     var extras = getSelectedExtras();
     var tradeIn = getTradeIn();
     var discount = getDiscount();
+    var financing = getFinancing();
     var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
     summaryModelRow.querySelector("span:last-child").textContent = model ? (model.name + " · " + formatNOK(model.price)) : "–";
 
@@ -679,6 +731,16 @@
 
     var total = (model ? model.price : 0) + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum - (tradeIn ? tradeIn.value : 0) - (discount ? discount.value : 0);
     summaryTotal.textContent = formatNOK(total);
+
+    if (financing) {
+      var loanPrincipal = total - financing.downPayment;
+      var monthly = monthlyPayment(loanPrincipal, financing.rate, financing.months);
+      summaryFinancingRow.hidden = false;
+      summaryFinancingRow.querySelector("span:last-child").textContent = "ca. " + formatNOK(monthly) + "/mnd";
+    } else {
+      summaryFinancingRow.hidden = true;
+    }
+
     updateSendState();
   }
 
@@ -693,6 +755,9 @@
   tradeInValue.addEventListener("input", updateSummary);
   discountValue.addEventListener("input", updateSummary);
   discountDesc.addEventListener("input", updateSummary);
+  financeRate.addEventListener("input", updateSummary);
+  financeMonths.addEventListener("input", updateSummary);
+  financeDownPayment.addEventListener("input", updateSummary);
 
   function setSending(isSending) {
     sendBtn.disabled = isSending || sendBtn.disabled;
@@ -723,6 +788,7 @@
     var extras = getSelectedExtras();
     var tradeIn = getTradeIn();
     var discount = getDiscount();
+    var financing = getFinancing();
 
     // Safety net: recompute the total from exactly what is about to be sent
     // and compare it against the total currently shown on screen. If they
@@ -752,6 +818,7 @@
           extras: extras,
           tradeIn: tradeIn,
           discount: discount,
+          financing: financing,
           customer: {
             name: custName.value.trim(),
             phone: custPhone.value.trim(),
@@ -788,6 +855,9 @@
     tradeInValue.value = "";
     discountValue.value = "";
     discountDesc.value = "";
+    financeRate.value = "";
+    financeMonths.value = "";
+    financeDownPayment.value = "";
     renderExtras();
     updateSummary();
     selectTab(0);
