@@ -43,7 +43,7 @@
         { "name": "Polar White", "price": 0 },
         { "name": "Atlantis grey", "price": 15000 },
         { "name": "Obsidian black", "price": 15000 },
-        { "name": "Indigo grey", "price": 30000 },
+        { "name": "Indigo grey", "price": 30000 }
        
       ],
       "interiors": [
