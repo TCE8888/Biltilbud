@@ -274,9 +274,12 @@
     </div>
     <div class="row2" style="margin-bottom:14px;">
       <div class="input-wrap"><input type="number" inputmode="numeric" id="financeEstablishmentFee" placeholder="Etableringsgebyr (kr)"></div>
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="financeRegistrationFee" placeholder="Tinglysningsgebyr (kr)"></div>
+    </div>
+    <div class="field">
       <div class="input-wrap"><input type="number" inputmode="numeric" id="financeMonthlyFee" placeholder="Termingebyr (kr/mnd)"></div>
     </div>
-    <p style="color:var(--muted);font-size:13px;margin:0;">Fyll ut rente og løpetid for å vise en omtrentlig månedspris ved siden av kontantprisen. Etableringsgebyr og termingebyr er valgfrie tillegg som matcher det banken deres faktisk tar — sjekk mot bankens egen kalkulator for nøyaktige tall. La feltene stå tomme for å utelate finansiering fra tilbudet.</p>
+    <p style="color:var(--muted);font-size:13px;margin:0;">Fyll ut rente og løpetid for å vise en omtrentlig månedspris ved siden av kontantprisen. Gebyrene er forhåndsutfylt fra innstillinger ⚙ — juster der når banken endrer dem, eller overstyr her for et enkelt tilbud. La feltene stå tomme for å utelate finansiering fra tilbudet.</p>
   </section>
 
   <section id="panelCustomer" hidden>
@@ -327,6 +330,13 @@
 
   var DEFAULTS = { companyName: "Autosalg", dealerEmail: "", secret: "" };
 
+  // A number stored as a plain string ("" when unset) so it round-trips
+  // through an <input type="number"> without turning into "0" the first
+  // time settings are saved.
+  function numStr(v) {
+    return typeof v === "string" || typeof v === "number" ? String(v) : "";
+  }
+
   function loadSettings() {
     try {
       var raw = localStorage.getItem("biltilbud.settings");
@@ -337,18 +347,25 @@
           dealerEmail: typeof p.dealerEmail === "string" ? p.dealerEmail : DEFAULTS.dealerEmail,
           sellerName: typeof p.sellerName === "string" ? p.sellerName : "",
           sellerPhone: typeof p.sellerPhone === "string" ? p.sellerPhone : "",
-          secret: typeof p.secret === "string" ? p.secret : DEFAULTS.secret
+          secret: typeof p.secret === "string" ? p.secret : DEFAULTS.secret,
+          defaultEstablishmentFee: numStr(p.defaultEstablishmentFee),
+          defaultRegistrationFee: numStr(p.defaultRegistrationFee),
+          defaultMonthlyFee: numStr(p.defaultMonthlyFee)
         };
       }
     } catch (e) {}
-    return { companyName: DEFAULTS.companyName, dealerEmail: DEFAULTS.dealerEmail, sellerName: "", sellerPhone: "", secret: DEFAULTS.secret };
+    return {
+      companyName: DEFAULTS.companyName, dealerEmail: DEFAULTS.dealerEmail, sellerName: "", sellerPhone: "", secret: DEFAULTS.secret,
+      defaultEstablishmentFee: "", defaultRegistrationFee: "", defaultMonthlyFee: ""
+    };
   }
 
   function saveSettings(s) {
     try {
       localStorage.setItem("biltilbud.settings", JSON.stringify({
         companyName: s.companyName, dealerEmail: s.dealerEmail,
-        sellerName: s.sellerName, sellerPhone: s.sellerPhone, secret: s.secret
+        sellerName: s.sellerName, sellerPhone: s.sellerPhone, secret: s.secret,
+        defaultEstablishmentFee: s.defaultEstablishmentFee, defaultRegistrationFee: s.defaultRegistrationFee, defaultMonthlyFee: s.defaultMonthlyFee
       }));
     } catch (e) {}
   }
@@ -428,6 +445,7 @@
   var financeMonths = document.getElementById("financeMonths");
   var financeDownPayment = document.getElementById("financeDownPayment");
   var financeEstablishmentFee = document.getElementById("financeEstablishmentFee");
+  var financeRegistrationFee = document.getElementById("financeRegistrationFee");
   var financeMonthlyFee = document.getElementById("financeMonthlyFee");
   var custName = document.getElementById("custName");
   var custPhone = document.getElementById("custPhone");
@@ -670,8 +688,9 @@
     var rawMonths = financeMonths.value.trim();
     var rawDown = financeDownPayment.value.trim();
     var rawEstFee = financeEstablishmentFee.value.trim();
+    var rawRegFee = financeRegistrationFee.value.trim();
     var rawMonthlyFee = financeMonthlyFee.value.trim();
-    if (!rawRate && !rawMonths && !rawDown && !rawEstFee && !rawMonthlyFee) return null;
+    if (!rawRate && !rawMonths && !rawDown && !rawEstFee && !rawRegFee && !rawMonthlyFee) return null;
 
     var rate = rawRate ? Number(rawRate) : 0;
     if (!isFinite(rate) || rate < 0) rate = 0;
@@ -681,10 +700,12 @@
     if (!isFinite(downPayment) || downPayment < 0) downPayment = 0;
     var establishmentFee = rawEstFee ? Number(rawEstFee) : 0;
     if (!isFinite(establishmentFee) || establishmentFee < 0) establishmentFee = 0;
+    var registrationFee = rawRegFee ? Number(rawRegFee) : 0;
+    if (!isFinite(registrationFee) || registrationFee < 0) registrationFee = 0;
     var monthlyFee = rawMonthlyFee ? Number(rawMonthlyFee) : 0;
     if (!isFinite(monthlyFee) || monthlyFee < 0) monthlyFee = 0;
 
-    return { rate: rate, months: months, downPayment: downPayment, establishmentFee: establishmentFee, monthlyFee: monthlyFee };
+    return { rate: rate, months: months, downPayment: downPayment, establishmentFee: establishmentFee, registrationFee: registrationFee, monthlyFee: monthlyFee };
   }
 
   function monthlyPayment(principal, ratePct, months) {
@@ -745,7 +766,7 @@
     summaryTotal.textContent = formatNOK(total);
 
     if (financing) {
-      var loanPrincipal = total - financing.downPayment + financing.establishmentFee;
+      var loanPrincipal = total - financing.downPayment + financing.establishmentFee + financing.registrationFee;
       var monthly = monthlyPayment(loanPrincipal, financing.rate, financing.months) + financing.monthlyFee;
       summaryFinancingRow.hidden = false;
       summaryFinancingRow.querySelector("span:last-child").textContent = "ca. " + formatNOK(monthly) + "/mnd";
@@ -771,6 +792,7 @@
   financeMonths.addEventListener("input", updateSummary);
   financeDownPayment.addEventListener("input", updateSummary);
   financeEstablishmentFee.addEventListener("input", updateSummary);
+  financeRegistrationFee.addEventListener("input", updateSummary);
   financeMonthlyFee.addEventListener("input", updateSummary);
 
   function setSending(isSending) {
@@ -872,8 +894,12 @@
     financeRate.value = "";
     financeMonths.value = "";
     financeDownPayment.value = "";
-    financeEstablishmentFee.value = "";
-    financeMonthlyFee.value = "";
+    // Pre-filled from the saved defaults (⚙ → Finansiering) rather than
+    // left blank, so the seller doesn't have to retype the bank's current
+    // fees on every single offer — still freely editable per offer.
+    financeEstablishmentFee.value = settings.defaultEstablishmentFee || "";
+    financeRegistrationFee.value = settings.defaultRegistrationFee || "";
+    financeMonthlyFee.value = settings.defaultMonthlyFee || "";
     renderExtras();
     updateSummary();
     selectTab(0);
@@ -904,6 +930,15 @@
           '<div class="input-wrap"><input type="tel" id="sellerPhoneSetting" placeholder="Din telefon"></div>' +
         '</div>' +
         '<div class="sheet-section">' +
+          '<h2>Finansiering — standardgebyrer</h2>' +
+          '<p class="hint">Forhåndsutfylt i Finansiering-fanen hver gang, så dere slipper å skrive dem inn på nytt for hvert tilbud. Juster her når banken endrer sine gebyrer — selgeren kan fortsatt overstyre per tilbud ved behov.</p>' +
+          '<div class="row2" style="margin-bottom:8px;">' +
+            '<div class="input-wrap"><input type="number" inputmode="numeric" id="defaultEstablishmentFeeSetting" placeholder="Etableringsgebyr (kr)"></div>' +
+            '<div class="input-wrap"><input type="number" inputmode="numeric" id="defaultRegistrationFeeSetting" placeholder="Tinglysningsgebyr (kr)"></div>' +
+          '</div>' +
+          '<div class="input-wrap"><input type="number" inputmode="numeric" id="defaultMonthlyFeeSetting" placeholder="Termingebyr (kr/mnd)"></div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
           '<h2>Priser</h2>' +
           '<p class="hint">Modeller, lakk, interiør og ekstrautstyr styres sentralt for alle som bruker appen, i filen <code>prices.json</code> i prosjektet på GitHub — rediger den der (enklest på PC), så oppdateres alle telefoner automatisk neste gang appen åpnes.</p>' +
         '</div>' +
@@ -926,6 +961,12 @@
     sellerPhoneSetting.value = settings.sellerPhone || "";
     var secretSetting = backdrop.querySelector("#secretSetting");
     secretSetting.value = settings.secret;
+    var defaultEstablishmentFeeSetting = backdrop.querySelector("#defaultEstablishmentFeeSetting");
+    defaultEstablishmentFeeSetting.value = settings.defaultEstablishmentFee || "";
+    var defaultRegistrationFeeSetting = backdrop.querySelector("#defaultRegistrationFeeSetting");
+    defaultRegistrationFeeSetting.value = settings.defaultRegistrationFee || "";
+    var defaultMonthlyFeeSetting = backdrop.querySelector("#defaultMonthlyFeeSetting");
+    defaultMonthlyFeeSetting.value = settings.defaultMonthlyFee || "";
 
     function closeAndSave() {
       settings.companyName = companySetting.value.trim() || DEFAULTS.companyName;
@@ -933,11 +974,20 @@
       settings.sellerName = sellerNameSetting.value.trim();
       settings.sellerPhone = sellerPhoneSetting.value.trim();
       settings.secret = secretSetting.value.trim();
+      settings.defaultEstablishmentFee = defaultEstablishmentFeeSetting.value.trim();
+      settings.defaultRegistrationFee = defaultRegistrationFeeSetting.value.trim();
+      settings.defaultMonthlyFee = defaultMonthlyFeeSetting.value.trim();
       saveSettings(settings);
       renderModels();
       renderPaints();
       renderInteriors();
       renderExtras();
+      // Refresh the fee fields to the new defaults right away — this is
+      // the "bank changed its fees" path, so the update should show up
+      // immediately rather than waiting for the next offer.
+      financeEstablishmentFee.value = settings.defaultEstablishmentFee || "";
+      financeRegistrationFee.value = settings.defaultRegistrationFee || "";
+      financeMonthlyFee.value = settings.defaultMonthlyFee || "";
       updateSummary();
       document.body.removeChild(backdrop);
       showToast("Lagret.");
@@ -961,6 +1011,12 @@
     renderPaints();
     renderInteriors();
     renderExtras();
+    // Same pre-fill as resetForm() — so the fee fields already show the
+    // saved defaults the very first time the Finansiering tab is opened,
+    // not just after the first offer is sent.
+    financeEstablishmentFee.value = settings.defaultEstablishmentFee || "";
+    financeRegistrationFee.value = settings.defaultRegistrationFee || "";
+    financeMonthlyFee.value = settings.defaultMonthlyFee || "";
     updateSummary();
 
     if (!settings.secret) {
