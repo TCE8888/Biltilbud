@@ -142,6 +142,18 @@
       </div>
     </div>
 
+    <div class="card" id="financingCard" hidden>
+      <h2>Finansieringseksempel</h2>
+      <div class="row"><span class="name">Lånebeløp</span><span class="price" id="finPrincipal"></span></div>
+      <div class="row" id="finDownRow" hidden><span class="name">Egenkapital</span><span class="price" id="finDown"></span></div>
+      <div class="row"><span class="name">Rente / løpetid</span><span class="price" id="finTerms"></span></div>
+      <div class="total-row">
+        <div class="label">Ca. per måned</div>
+        <div class="price" id="finMonthly"></div>
+      </div>
+      <p class="note">Veiledende eksempel, ikke et bindende lånetilbud.</p>
+    </div>
+
     <div class="card">
       <h2>Godta tilbud</h2>
       <label class="field-label" for="acceptName">Ditt fulle navn</label>
@@ -235,6 +247,17 @@
         addRow(rows, offer.discount.description || "Rabatt", "-" + fmtNOK(offer.discount.value), true);
       }
       document.getElementById("offerTotal").textContent = fmtNOK(offer.total);
+
+      if (offer.financing) {
+        document.getElementById("financingCard").hidden = false;
+        document.getElementById("finPrincipal").textContent = fmtNOK(offer.financing.principal);
+        if (offer.financing.downPayment) {
+          document.getElementById("finDownRow").hidden = false;
+          document.getElementById("finDown").textContent = fmtNOK(offer.financing.downPayment);
+        }
+        document.getElementById("finTerms").textContent = offer.financing.rate + " % p.a. · " + offer.financing.months + " mnd";
+        document.getElementById("finMonthly").textContent = fmtNOK(offer.financing.monthly) + "/mnd";
+      }
 
       offerState.hidden = false;
 
