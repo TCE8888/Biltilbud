@@ -51,29 +51,30 @@
         { "name": "Thaiti Blue", "price": 12500 }
       ]
     },
-    {
-      "name": "BYD Seal 4x4",
-      "price": 484800,
-      "extras": [
-        { "name": "Vinterhjulsett UP", "price": 39375 },
-        { "name": "Vinterhjulsett MP", "price": 40625 },
-        { "name": "Tilhengerfeste", "price": 25175 },
-        { "name": "Ladekabel", "price": 4500 },
-        { "name": "Lakkbehandling", "price": 11990 },
-        { "name": "Understellsbehandling", "price": 4375 }
-     
-      ],
-     "paints": [
-  { "name": "Ruby Red", "price": 23625, "image": "byd-seal-ruby-red.jpg" },
-  { "name": "Space Black", "price": 12375 },
-  { "name": "Atlantis Grey", "price": 12375 },
-  { "name": "Indigo Grey", "price": 23625 },
-  { "name": "Lavender Grey", "price": 23625 }
-],
-      "interiors": [
-        { "name": "Black", "price": 0 },
-        { "name": "Tahiti blue", "price": 12500 }
-      ]
+  {
+  "name": "BYD Seal 4x4",
+  "price": 484800,
+  "extras": [
+    { "name": "Vinterhjulsett UP", "price": 39375 },
+    { "name": "Vinterhjulsett MP", "price": 40625 },
+    { "name": "Tilhengerfeste", "price": 25175 },
+    { "name": "Ladekabel", "price": 4500 },
+    { "name": "Lakkbehandling", "price": 11990 },
+    { "name": "Understellsbehandling", "price": 4375 }
+  ],
+  "paints": [
+    { "name": "Polar White", "price": 0, "image": "byd-seal-polar-white.jpg" },
+    { "name": "Space Black", "price": 12375, "image": "byd-seal-space-black.jpg" },
+    { "name": "Atlantis Grey", "price": 12375, "image": "byd-seal-atlantis-grey.jpg" },
+    { "name": "Indigo Grey", "price": 23625, "image": "byd-seal-indigo-grey.jpg" },
+    { "name": "Lavender Grey", "price": 23625, "image": "byd-seal-lavender-grey.jpg" },
+    { "name": "Ruby Red", "price": 23625, "image": "byd-seal-ruby-red.jpg" }
+  ],
+  "interiors": [
+    { "name": "Black", "price": 0 },
+    { "name": "Tahiti blue", "price": 12500 }
+  ]
+},
     },
     {
       "name": "BYD Dolphin",
