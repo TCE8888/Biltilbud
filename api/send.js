@@ -48,6 +48,18 @@ function formatNOK(n) {
   return v.toLocaleString("nb-NO").replace(/ /g, " ") + " kr";
 }
 
+// Standard annuity loan payment (Norway's usual "billån") — not leasing,
+// which prices off a residual value instead. Mirrors the same formula used
+// client-side in index.html so the number shown while building the offer
+// matches what ends up on the PDF.
+function monthlyPayment(principal, ratePct, months) {
+  var p = Math.max(0, Number(principal) || 0);
+  var monthlyRate = (Number(ratePct) || 0) / 100 / 12;
+  if (p <= 0 || !months || months <= 0) return 0;
+  if (monthlyRate === 0) return p / months;
+  return (p * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));
+}
+
 async function buildOfferPdf(data) {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -215,6 +227,23 @@ async function buildOfferPdf(data) {
   page.drawText(totalStr, { x: pageWidth - margin - totalWidth, y: totalRowY - 3, size: 20, font: bold, color: accent });
   y -= 30;
 
+  if (data.financing) {
+    hr();
+    text("Finansieringseksempel", { font: bold, size: 11, color: muted, gap: 16 });
+    priceRow("Lånebeløp (etter egenkapital)", formatNOK(data.financing.principal), { labelSize: 12, priceSize: 12, rowGap: 16 });
+    if (data.financing.downPayment) {
+      priceRow("Egenkapital", formatNOK(data.financing.downPayment), { labelSize: 12, priceSize: 12, rowGap: 16 });
+    }
+    priceRow("Rente / løpetid", data.financing.rate.toLocaleString("nb-NO") + " % p.a. · " + data.financing.months + " mnd", { labelSize: 12, priceSize: 12, rowGap: 18 });
+    priceRow("Ca. per måned", formatNOK(data.financing.monthly) + "/mnd", {
+      labelFont: bold, labelSize: 13, priceFont: bold, priceSize: 15, priceColor: accent, rowGap: 18,
+    });
+    text("Veiledende eksempel, ikke et bindende lånetilbud. Faktiske vilkår avtales med bank/finansieringsselskap.", {
+      size: 9, color: muted, gap: 12,
+    });
+    y -= 4;
+  }
+
   if (data.note) {
     hr();
     text("Notat", { font: bold, size: 11, color: muted, gap: 16 });
@@ -276,7 +305,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { model, paint, interior, extras, tradeIn, discount, customer, note, companyName, bcc, sellerName, sellerPhone } = body || {};
+  const { model, paint, interior, extras, tradeIn, discount, financing, customer, note, companyName, bcc, sellerName, sellerPhone } = body || {};
 
   if (!model || typeof model.name !== "string" || typeof model.price !== "number") {
     res.status(400).json({ error: "missing_model" });
@@ -336,6 +365,28 @@ module.exports = async function handler(req, res) {
     cleanExtras.reduce(function (sum, e) { return sum + e.price; }, 0) -
     (cleanTradeIn ? cleanTradeIn.value : 0) -
     (cleanDiscount ? cleanDiscount.value : 0);
+
+  // Financing example — a simple annuity loan ("billån"), not leasing.
+  // Requires a rate and a loan term to mean anything; a down payment with
+  // no term entered is dropped rather than guessed at.
+  let cleanFinancing = null;
+  if (financing && financing.months != null) {
+    var finRate = Number(financing.rate);
+    if (!isFinite(finRate) || finRate < 0) finRate = 0;
+    var finMonths = Math.round(Number(financing.months));
+    var finDown = Number(financing.downPayment);
+    if (!isFinite(finDown) || finDown < 0) finDown = 0;
+    if (isFinite(finMonths) && finMonths > 0) {
+      var finPrincipal = Math.max(0, total - finDown);
+      cleanFinancing = {
+        rate: finRate,
+        months: finMonths,
+        downPayment: finDown,
+        principal: finPrincipal,
+        monthly: monthlyPayment(finPrincipal, finRate, finMonths),
+      };
+    }
+  }
 
   function fmtDate(d) {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -403,6 +454,7 @@ module.exports = async function handler(req, res) {
             extras: cleanExtras,
             tradeIn: cleanTradeIn,
             discount: cleanDiscount,
+            financing: cleanFinancing,
             total: total,
             customerName: customer.name || "",
             customerEmail: customer.email,
@@ -458,6 +510,7 @@ module.exports = async function handler(req, res) {
       extras: cleanExtras,
       tradeIn: cleanTradeIn,
       discount: cleanDiscount,
+      financing: cleanFinancing,
       total: total,
       customer: customer,
       note: note || "",
