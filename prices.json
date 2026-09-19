@@ -63,14 +63,13 @@
         { "name": "Understellsbehandling", "price": 4375 }
      
       ],
-      "paints": [
-        { "name": "Polar White", "price": 0 },
-        { "name": "Space Black", "price": 12375 },
-        { "name": "Atlantis Grey", "price": 12375 },
-        { "name": "Indigo Grey", "price": 23625 },
-        { "name": "Lavender Grey", "price": 23625 },
-        { "name": "Ruby Red", "price": 23625 }
-      ],
+     "paints": [
+  { "name": "Ruby Red", "price": 23625, "image": "byd-seal-ruby-red.jpg" },
+  { "name": "Space Black", "price": 12375 },
+  { "name": "Atlantis Grey", "price": 12375 },
+  { "name": "Indigo Grey", "price": 23625 },
+  { "name": "Lavender Grey", "price": 23625 }
+],
       "interiors": [
         { "name": "Black", "price": 0 },
         { "name": "Tahiti blue", "price": 12500 }
