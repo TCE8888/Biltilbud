@@ -146,6 +146,8 @@
       <h2>Finansieringseksempel</h2>
       <div class="row"><span class="name">Lånebeløp</span><span class="price" id="finPrincipal"></span></div>
       <div class="row" id="finDownRow" hidden><span class="name">Egenkapital</span><span class="price" id="finDown"></span></div>
+      <div class="row" id="finEstFeeRow" hidden><span class="name">Etableringsgebyr</span><span class="price" id="finEstFee"></span></div>
+      <div class="row" id="finMonthlyFeeRow" hidden><span class="name">Termingebyr</span><span class="price" id="finMonthlyFee"></span></div>
       <div class="row"><span class="name">Rente / løpetid</span><span class="price" id="finTerms"></span></div>
       <div class="total-row">
         <div class="label">Ca. per måned</div>
@@ -254,6 +256,14 @@
         if (offer.financing.downPayment) {
           document.getElementById("finDownRow").hidden = false;
           document.getElementById("finDown").textContent = fmtNOK(offer.financing.downPayment);
+        }
+        if (offer.financing.establishmentFee) {
+          document.getElementById("finEstFeeRow").hidden = false;
+          document.getElementById("finEstFee").textContent = fmtNOK(offer.financing.establishmentFee);
+        }
+        if (offer.financing.monthlyFee) {
+          document.getElementById("finMonthlyFeeRow").hidden = false;
+          document.getElementById("finMonthlyFee").textContent = fmtNOK(offer.financing.monthlyFee) + "/mnd";
         }
         document.getElementById("finTerms").textContent = offer.financing.rate + " % p.a. · " + offer.financing.months + " mnd";
         document.getElementById("finMonthly").textContent = fmtNOK(offer.financing.monthly) + "/mnd";
