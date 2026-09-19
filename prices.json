@@ -30,26 +30,25 @@
       "name": "BYD Sealion 7",
       "price": 0,
       "extras": [
-        { "name": "Vinterhjulsett", "price": 0 },
-        { "name": "Skinnseter", "price": 0 },
-        { "name": "Tilhengerfeste", "price": 0 },
-        { "name": "Soltak", "price": 0 },
-        { "name": "Head-up display", "price": 0 },
-        { "name": "Ryggekamera", "price": 0 },
-        { "name": "Adaptiv cruisekontroll", "price": 0 },
-        { "name": "Varme i ratt", "price": 0 }
+        { "name": "Vinterhjulsett UP", "price": 38625 },
+        { "name": "Vinterhjulsett MP", "price": 42000 },
+        { "name": "Tilhengerfeste", "price": 18970 },
+        { "name": "Ladekabel", "price": 4500 },
+        { "name": "Lakkbehandling", "price": 11990 },
+        { "name": "Gummimatter", "price": 2250 },
+        { "name": "Baggasjeromsmatte", "price": 2055 },
+        { "name": "Understellsbehandling", "price": 4375 }
       ],
       "paints": [
-        { "name": "Hvit", "price": 0 },
-        { "name": "Sort metallic", "price": 0 },
-        { "name": "Grå metallic", "price": 0 },
-        { "name": "Blå metallic", "price": 0 },
-        { "name": "Rød metallic", "price": 0 },
-        { "name": "Sølv metallic", "price": 0 }
+        { "name": "Polar White", "price": 0 },
+        { "name": "Atlantis grey", "price": 15000 },
+        { "name": "Obsidian black", "price": 15000 },
+        { "name": "Indigo grey", "price": 30000 },
+       
       ],
       "interiors": [
-        { "name": "Mørkt brunt interiør", "price": 0 },
-        { "name": "Lyst brunt interiør", "price": 0 }
+        { "name": "Black", "price": 0 },
+        { "name": "Thaiti blue", "price": 12500 }
       ]
     },
     {
