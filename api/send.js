@@ -230,9 +230,18 @@ async function buildOfferPdf(data) {
   if (data.financing) {
     hr();
     text("Finansieringseksempel", { font: bold, size: 11, color: muted, gap: 16 });
-    priceRow("Lånebeløp (etter egenkapital)", formatNOK(data.financing.principal), { labelSize: 12, priceSize: 12, rowGap: 16 });
+    priceRow("Lånebeløp (inkl. gebyrer)", formatNOK(data.financing.principal), { labelSize: 12, priceSize: 12, rowGap: 16 });
     if (data.financing.downPayment) {
       priceRow("Egenkapital", formatNOK(data.financing.downPayment), { labelSize: 12, priceSize: 12, rowGap: 16 });
+    }
+    if (data.financing.establishmentFee) {
+      priceRow("Etableringsgebyr", formatNOK(data.financing.establishmentFee), { labelSize: 12, priceSize: 12, rowGap: 16 });
+    }
+    if (data.financing.registrationFee) {
+      priceRow("Tinglysningsgebyr", formatNOK(data.financing.registrationFee), { labelSize: 12, priceSize: 12, rowGap: 16 });
+    }
+    if (data.financing.monthlyFee) {
+      priceRow("Termingebyr", formatNOK(data.financing.monthlyFee) + "/mnd", { labelSize: 12, priceSize: 12, rowGap: 16 });
     }
     priceRow("Rente / løpetid", data.financing.rate.toLocaleString("nb-NO") + " % p.a. · " + data.financing.months + " mnd", { labelSize: 12, priceSize: 12, rowGap: 18 });
     priceRow("Ca. per måned", formatNOK(data.financing.monthly) + "/mnd", {
@@ -376,14 +385,29 @@ module.exports = async function handler(req, res) {
     var finMonths = Math.round(Number(financing.months));
     var finDown = Number(financing.downPayment);
     if (!isFinite(finDown) || finDown < 0) finDown = 0;
+    var finEstFee = Number(financing.establishmentFee);
+    if (!isFinite(finEstFee) || finEstFee < 0) finEstFee = 0;
+    var finRegFee = Number(financing.registrationFee);
+    if (!isFinite(finRegFee) || finRegFee < 0) finRegFee = 0;
+    var finMonthlyFee = Number(financing.monthlyFee);
+    if (!isFinite(finMonthlyFee) || finMonthlyFee < 0) finMonthlyFee = 0;
     if (isFinite(finMonths) && finMonths > 0) {
-      var finPrincipal = Math.max(0, total - finDown);
+      // The establishment and registration ("tinglysning") fees are
+      // financed together with the loan (added to the amount borrowed, the
+      // way most Norwegian banks present it), so they're folded into the
+      // principal before the annuity calculation. The monthly ("termin")
+      // fee isn't part of the loan — it's billed on top of every payment —
+      // so it's added after the annuity math instead.
+      var finPrincipal = Math.max(0, total - finDown + finEstFee + finRegFee);
       cleanFinancing = {
         rate: finRate,
         months: finMonths,
         downPayment: finDown,
+        establishmentFee: finEstFee,
+        registrationFee: finRegFee,
+        monthlyFee: finMonthlyFee,
         principal: finPrincipal,
-        monthly: monthlyPayment(finPrincipal, finRate, finMonths),
+        monthly: monthlyPayment(finPrincipal, finRate, finMonths) + finMonthlyFee,
       };
     }
   }
