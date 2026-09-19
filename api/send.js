@@ -1,8 +1,10 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const { getReminderStore, REMINDER_KEY } = require("../reminderStore.js");
+const { getOfferStore, offerKey, OFFER_TTL_SECONDS } = require("../offerStore.js");
 
 // Vercel serverless function (Node runtime). Receives a model, a list of
 // checked extras, and customer contact details as JSON, builds a one-page
@@ -373,6 +375,51 @@ module.exports = async function handler(req, res) {
     };
   }
 
+  // Store a copy of this offer under a random id so the customer can open a
+  // link in their email and accept it digitally later. Best-effort: if the
+  // Redis database isn't connected, or we can't work out this deployment's
+  // own URL from the request, the offer still sends as normal — it just
+  // won't have an "accept" link this time.
+  let offerId = null;
+  let acceptUrl = null;
+  try {
+    const offerStore = getOfferStore();
+    if (offerStore) {
+      const proto = req.headers["x-forwarded-proto"] || "https";
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      const baseUrl = process.env.APP_BASE_URL || (host ? proto + "://" + host : "");
+      if (baseUrl) {
+        offerId = crypto.randomBytes(16).toString("hex");
+        acceptUrl = baseUrl.replace(/\/$/, "") + "/godta.html?id=" + offerId;
+        await offerStore.set(
+          offerKey(offerId),
+          JSON.stringify({
+            status: "pending",
+            createdAt: Date.now(),
+            companyName: companyName || "Autosalg",
+            model: model,
+            paint: cleanPaint,
+            interior: cleanInterior,
+            extras: cleanExtras,
+            tradeIn: cleanTradeIn,
+            discount: cleanDiscount,
+            total: total,
+            customerName: customer.name || "",
+            customerEmail: customer.email,
+            sellerLine: sellerLine,
+            bcc: bcc && typeof bcc === "string" && bcc.trim() ? bcc.trim() : "",
+            replyToEmail: replyToEmail || "",
+            validUntil: validUntilStr,
+          }),
+          { ex: OFFER_TTL_SECONDS }
+        );
+      }
+    }
+  } catch (e) {
+    offerId = null;
+    acceptUrl = null; // best effort — see comment above
+  }
+
   let carImageBytes = null;
   let carImageExt = null;
   if (cleanPaint && cleanPaint.image) {
@@ -433,10 +480,14 @@ module.exports = async function handler(req, res) {
   const contactLine = sellerLine
     ? "Har du spørsmål, ta kontakt: " + sellerLine + ".\n\n"
     : "Ta gjerne kontakt om du har spørsmål.\n\n";
+  const acceptLine = acceptUrl
+    ? "Vil du godta tilbudet? Trykk her: " + acceptUrl + "\n\n"
+    : "";
   const bodyText =
     "Hei" + (greetName ? " " + greetName : "") + ",\n\n" +
     "Vedlagt følger tilbud på " + model.name + ", totalpris " + formatNOK(total) + ".\n" +
     "Tilbudet er gyldig til " + validUntilStr + " (14 dager fra i dag).\n\n" +
+    acceptLine +
     contactLine +
     "Mvh " + signOff + (cleanSellerName ? " / " + (companyName || "Autosalg") : "");
 
@@ -465,8 +516,11 @@ module.exports = async function handler(req, res) {
     "<p>Hei" + (greetName ? " " + escapeHtml(greetName) : "") + ",</p>" +
     "<p>Vedlagt følger tilbud på <strong>" + escapeHtml(model.name) + "</strong>, totalpris <strong>" + formatNOK(total) + "</strong>.<br>" +
     "Tilbudet er gyldig til " + validUntilStr + " (14 dager fra i dag).</p>" +
+    (acceptUrl
+      ? '<p style="margin:24px 0;"><a href="' + acceptUrl + '" style="display:inline-block;background:#2f6f5e;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;">Godta tilbudet digitalt</a></p>'
+      : "") +
     (mailtoHref
-      ? '<p style="margin:24px 0;"><a href="' + mailtoHref + '" style="display:inline-block;background:#2f6f5e;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;">Svar her</a></p>' +
+      ? '<p style="margin:' + (acceptUrl ? "0 0 24px" : "24px 0") + ';"><a href="' + mailtoHref + '" style="color:#2f6f5e;font-weight:600;text-decoration:none;">Har du spørsmål? Svar her</a></p>' +
         (sellerLine ? '<p style="color:#6c756e;font-size:13px;">Eller ta kontakt direkte: ' + escapeHtml(sellerLine) + "</p>" : "")
       : "<p>" + (sellerLine ? "Ta gjerne kontakt: " + escapeHtml(sellerLine) + "." : "Ta gjerne kontakt om du har spørsmål.") + "</p>") +
     "<p>Mvh " + escapeHtml(signOff) + (cleanSellerName ? " / " + escapeHtml(companyName || "Autosalg") : "") + "</p>" +
@@ -524,6 +578,7 @@ module.exports = async function handler(req, res) {
           sellerName: cleanSellerName || "",
           replyToEmail: replyToEmail || "",
           bcc: bcc && typeof bcc === "string" && bcc.trim() ? bcc.trim() : "",
+          acceptUrl: acceptUrl || "",
           sentAt: Date.now(),
         })
       );
