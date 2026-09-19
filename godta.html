@@ -147,6 +147,7 @@
       <div class="row"><span class="name">Lånebeløp</span><span class="price" id="finPrincipal"></span></div>
       <div class="row" id="finDownRow" hidden><span class="name">Egenkapital</span><span class="price" id="finDown"></span></div>
       <div class="row" id="finEstFeeRow" hidden><span class="name">Etableringsgebyr</span><span class="price" id="finEstFee"></span></div>
+      <div class="row" id="finRegFeeRow" hidden><span class="name">Tinglysningsgebyr</span><span class="price" id="finRegFee"></span></div>
       <div class="row" id="finMonthlyFeeRow" hidden><span class="name">Termingebyr</span><span class="price" id="finMonthlyFee"></span></div>
       <div class="row"><span class="name">Rente / løpetid</span><span class="price" id="finTerms"></span></div>
       <div class="total-row">
@@ -260,6 +261,10 @@
         if (offer.financing.establishmentFee) {
           document.getElementById("finEstFeeRow").hidden = false;
           document.getElementById("finEstFee").textContent = fmtNOK(offer.financing.establishmentFee);
+        }
+        if (offer.financing.registrationFee) {
+          document.getElementById("finRegFeeRow").hidden = false;
+          document.getElementById("finRegFee").textContent = fmtNOK(offer.financing.registrationFee);
         }
         if (offer.financing.monthlyFee) {
           document.getElementById("finMonthlyFeeRow").hidden = false;
