@@ -62,13 +62,14 @@
     { "name": "Lakkbehandling", "price": 11990 },
     { "name": "Understellsbehandling", "price": 4375 }
   ],
-  "paints": [
-    { "name": "Polar White", "price": 0, "image": "byd-seal-polar-white.webp" },
-    { "name": "Space Black", "price": 12375, "image": "byd-seal-space-black.jpg" },
-    { "name": "Atlantis Grey", "price": 12375, "image": "byd-seal-atlantis-grey.jpg" },
-    { "name": "Indigo Grey", "price": 23625, "image": "byd-seal-indigo-grey.jpg" },
-    { "name": "Lavender Grey", "price": 23625, "image": "byd-seal-lavender-grey.jpg" },
-    { "name": "Ruby Red", "price": 23625, "image": "byd-seal-ruby-red.jpg" }
+ "paints": [
+  { "name": "Polar White", "price": 0, "image": "byd-seal-polar-white.jpg" },
+  { "name": "Space Black", "price": 12375, "image": "byd-seal-space-black.jpg" },
+  { "name": "Atlantis Grey", "price": 12375, "image": "byd-seal-atlantis-grey.jpg" },
+  { "name": "Indigo Grey", "price": 23625, "image": "byd-seal-indigo-grey.jpg" },
+  { "name": "Lavender Grey", "price": 23625, "image": "byd-seal-lavender-grey.jpg" },
+  { "name": "Ruby Red", "price": 23625, "image": "byd-seal-ruby-red.jpg" }
+
   ],
   "interiors": [
     { "name": "Black", "price": 0 },
