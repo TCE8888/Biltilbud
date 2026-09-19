@@ -151,6 +151,27 @@ async function buildOfferPdf(data) {
     rowGap: 26,
   });
 
+  // A photo of the car in the selected color, if the seller's prices.json
+  // has one for this paint. Capped to a modest height so the rest of the
+  // offer still fits on the one page everything else here assumes.
+  if (data.carImageBytes) {
+    try {
+      const carImage = data.carImageExt === "png"
+        ? await pdfDoc.embedPng(data.carImageBytes)
+        : await pdfDoc.embedJpg(data.carImageBytes);
+      const maxWidth = pageWidth - margin * 2;
+      const maxHeight = 170;
+      const scale = Math.min(maxWidth / carImage.width, maxHeight / carImage.height);
+      const w = carImage.width * scale;
+      const h = carImage.height * scale;
+      const x = margin + (maxWidth - w) / 2; // centered
+      page.drawImage(carImage, { x: x, y: y - h, width: w, height: h });
+      y -= h + 16;
+    } catch (e) {
+      // Bad or unsupported image file — skip it silently, the offer still sends.
+    }
+  }
+
   function lineItem(label, item) {
     if (!item || !item.name) return;
     var priceStr = item.price ? formatNOK(item.price) : "Inkludert";
@@ -267,15 +288,23 @@ module.exports = async function handler(req, res) {
   // Coerce rather than silently drop: a price that arrives as a numeric
   // string (e.g. "12500" instead of 12500, which can happen if prices.json
   // is hand-edited) should still count, not vanish from the offer.
-  function cleanItem(item) {
+  function cleanItem(item, opts) {
     if (!item || typeof item.name !== "string" || !item.name.trim()) return null;
     var n = Number(item.price);
     if (!isFinite(n)) n = 0;
-    return { name: item.name, price: n };
+    var result = { name: item.name, price: n };
+    // Paint entries can carry an "image" field (a filename from prices.json,
+    // e.g. "byd-evo-rod.jpg") naming a photo of the car in that color. Only
+    // passed through for paint — kept here rather than trusted as-is because
+    // it still has to be turned into a safe filesystem path later.
+    if (opts && opts.withImage && typeof item.image === "string" && item.image.trim()) {
+      result.image = item.image.trim();
+    }
+    return result;
   }
-  const cleanPaint = cleanItem(paint);
+  const cleanPaint = cleanItem(paint, { withImage: true });
   const cleanInterior = cleanItem(interior);
-  const cleanExtras = Array.isArray(extras) ? extras.map(cleanItem).filter(Boolean) : [];
+  const cleanExtras = Array.isArray(extras) ? extras.map(function (e) { return cleanItem(e); }).filter(Boolean) : [];
 
   // Trade-in reduces the total rather than adding to it. A description
   // alone with no value, or a value with no description, is still valid —
@@ -326,11 +355,56 @@ module.exports = async function handler(req, res) {
   if (replyToEmail) sellerLineParts.push(replyToEmail);
   const sellerLine = sellerLineParts.join(" · ");
 
+  // The seller only sends us a filename (e.g. "byd-evo-rod.jpg", taken from
+  // prices.json). It has to resolve to a real image file living next to
+  // logo.png at the project root — never trust it as a path outright, or a
+  // crafted filename like "../../.env" could read arbitrary files. Stripping
+  // to just the basename and requiring a plain image extension closes that
+  // off; anything that doesn't match is quietly ignored (no photo, not a
+  // crash) rather than rejecting the whole offer over a bad filename.
+  function safeCarImagePath(filename) {
+    if (typeof filename !== "string") return null;
+    var base = path.basename(filename.trim());
+    if (!/^[a-zA-Z0-9_.\-]+\.(jpe?g|png|webp)$/i.test(base)) return null;
+    var isWebp = /\.webp$/i.test(base);
+    return {
+      full: path.join(__dirname, "..", base),
+      ext: isWebp ? "webp" : (/\.png$/i.test(base) ? "png" : "jpg"),
+    };
+  }
+
+  let carImageBytes = null;
+  let carImageExt = null;
+  if (cleanPaint && cleanPaint.image) {
+    var imgInfo = safeCarImagePath(cleanPaint.image);
+    if (imgInfo) {
+      try {
+        var rawImageBytes = fs.readFileSync(imgInfo.full);
+        if (imgInfo.ext === "webp") {
+          // pdf-lib can only embed JPEG/PNG, so webp is converted to PNG
+          // first. Requiring sharp here (rather than at the top of the
+          // file) means a problem with that optional dependency only costs
+          // the photo, not the whole send — everything else still works.
+          var sharp = require("sharp");
+          carImageBytes = await sharp(rawImageBytes).png().toBuffer();
+          carImageExt = "png";
+        } else {
+          carImageBytes = rawImageBytes;
+          carImageExt = imgInfo.ext;
+        }
+      } catch (e) {
+        carImageBytes = null; // file not uploaded yet, or couldn't convert — offer still sends, just without the photo
+      }
+    }
+  }
+
   let pdfBuffer;
   try {
     pdfBuffer = await buildOfferPdf({
       companyName: companyName || "Autosalg",
       logoBytes: LOGO_BYTES,
+      carImageBytes: carImageBytes,
+      carImageExt: carImageExt,
       model: model,
       paint: cleanPaint,
       interior: cleanInterior,
