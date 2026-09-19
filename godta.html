@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Godta tilbud</title>
+<meta name="description" content="Se og godta bil-tilbudet ditt.">
+<meta name="theme-color" content="#2f6f5e">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --surface-sunken: #efece3;
+    --ink: #1d2420;
+    --muted: #6c756e;
+    --line: #e2ddd0;
+    --accent: #2f6f5e;
+    --accent-strong: #1d4c40;
+    --accent-tint: #e4efe9;
+    --warn: #a8541f;
+    --warn-tint: #f5e7db;
+    --shadow: 0 1px 2px rgba(29,36,32,0.06), 0 6px 16px rgba(29,36,32,0.06);
+    --radius: 14px;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141a17;
+      --surface: #1c2420;
+      --surface-sunken: #222b26;
+      --ink: #eceae3;
+      --muted: #98a39a;
+      --line: #2c3833;
+      --accent: #58ab92;
+      --accent-strong: #7fc4ab;
+      --accent-tint: #22332c;
+      --warn: #e2a273;
+      --warn-tint: #35291f;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    padding: env(safe-area-inset-top, 0px) 18px env(safe-area-inset-bottom, 24px);
+  }
+  main { max-width: 460px; margin: 0 auto; padding-top: 28px; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px; box-shadow: var(--shadow); margin-bottom: 16px;
+  }
+  .card h2 {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 12px;
+  }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 14px; }
+  .row + .row { border-top: 1px dashed var(--line); }
+  .row .name { color: var(--ink); }
+  .row .price { font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
+  .row.deduction .price { color: var(--warn); }
+  .total-row {
+    display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px; margin-top: 6px;
+    border-top: 1px solid var(--line);
+  }
+  .total-row .label { font-weight: 600; font-size: 14px; }
+  .total-row .price { font-family: "IBM Plex Mono", monospace; font-weight: 700; font-size: 22px; color: var(--accent-strong); }
+  .field-label {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;
+  }
+  .input-wrap input[type="text"] {
+    width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    border-radius: 10px; padding: 12px 14px; font-size: 15px; font-family: inherit;
+  }
+  .input-wrap input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .check-row { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; cursor: pointer; }
+  .check-row input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--accent); }
+  .check-row span { font-size: 13.5px; color: var(--muted); line-height: 1.4; }
+  .accept-btn {
+    appearance: none; border: none; width: 100%; margin-top: 18px; padding: 15px 18px;
+    background: var(--accent); color: #ffffff; font-family: inherit; font-weight: 600; font-size: 15.5px;
+    border-radius: 12px; cursor: pointer;
+  }
+  .accept-btn:disabled { background: var(--surface-sunken); color: var(--muted); cursor: not-allowed; }
+  .accept-btn:active:not(:disabled) { transform: translateY(1px); }
+  .note { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  .state { text-align: center; padding: 40px 12px; color: var(--muted); }
+  .state.error { color: var(--warn); }
+  .state-icon { font-size: 34px; margin-bottom: 10px; }
+  .toast {
+    position: fixed; left: 18px; right: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+    background: var(--ink); color: var(--bg); padding: 12px 16px; border-radius: 10px; font-size: 14px;
+    text-align: center; box-shadow: var(--shadow); max-width: 460px; margin: 0 auto;
+  }
+  [hidden] { display: none !important; }
+  .success-icon {
+    width: 56px; height: 56px; border-radius: 50%; background: var(--accent-tint); color: var(--accent-strong);
+    display: grid; place-items: center; font-size: 28px; margin: 4px auto 14px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <div id="loadingState" class="state">
+    <div class="state-icon">⏳</div>
+    Henter tilbudet …
+  </div>
+
+  <div id="errorState" class="state error" hidden>
+    <div class="state-icon">⚠️</div>
+    <div id="errorText">Fant ikke tilbudet.</div>
+  </div>
+
+  <div id="acceptedState" hidden>
+    <div class="success-icon">✓</div>
+    <h1 style="text-align:center;">Tilbudet er akseptert</h1>
+    <p class="lede" style="text-align:center;" id="acceptedText"></p>
+  </div>
+
+  <div id="offerState" hidden>
+    <h1 id="offerTitle">Ditt tilbud</h1>
+    <p class="lede" id="offerLede"></p>
+
+    <div class="card">
+      <h2>Sammendrag</h2>
+      <div id="offerRows"></div>
+      <div class="total-row">
+        <div class="label">Totalpris</div>
+        <div class="price" id="offerTotal"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Godta tilbud</h2>
+      <label class="field-label" for="acceptName">Ditt fulle navn</label>
+      <div class="input-wrap">
+        <input type="text" id="acceptName" placeholder="Fornavn Etternavn" autocomplete="name">
+      </div>
+      <label class="check-row">
+        <input type="checkbox" id="acceptCheck">
+        <span>Jeg bekrefter at jeg har lest tilbudet og aksepterer det på prisen og vilkårene beskrevet ovenfor.</span>
+      </label>
+      <button class="accept-btn" id="acceptBtn" disabled>Godta tilbud</button>
+      <p class="note">Dette er en digital bekreftelse (ikke BankID-signatur). Tidspunkt og navn lagres som dokumentasjon på aksepten.</p>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get("id");
+
+  var loadingState = document.getElementById("loadingState");
+  var errorState = document.getElementById("errorState");
+  var errorText = document.getElementById("errorText");
+  var offerState = document.getElementById("offerState");
+  var acceptedState = document.getElementById("acceptedState");
+  var acceptedText = document.getElementById("acceptedText");
+
+  function showError(msg) {
+    loadingState.hidden = true;
+    offerState.hidden = true;
+    acceptedState.hidden = true;
+    errorText.textContent = msg;
+    errorState.hidden = false;
+  }
+
+  function fmtNOK(n) {
+    var v = Math.round(Number(n) || 0);
+    return v.toLocaleString("nb-NO") + " kr";
+  }
+
+  function addRow(container, label, priceStr, isDeduction) {
+    var row = document.createElement("div");
+    row.className = "row" + (isDeduction ? " deduction" : "");
+    row.innerHTML =
+      '<div class="name"></div><div class="price"></div>';
+    row.querySelector(".name").textContent = label;
+    row.querySelector(".price").textContent = priceStr;
+    container.appendChild(row);
+  }
+
+  if (!id) {
+    showError("Denne lenken mangler informasjon om hvilket tilbud den gjelder. Be selgeren sende deg lenken på nytt.");
+    return;
+  }
+
+  fetch("/api/offer?id=" + encodeURIComponent(id))
+    .then(function (res) {
+      if (res.status === 404) throw { code: "not_found" };
+      if (!res.ok) throw { code: "other" };
+      return res.json();
+    })
+    .then(function (offer) {
+      loadingState.hidden = true;
+
+      if (offer.status === "accepted") {
+        acceptedText.textContent =
+          "Takk, " + (offer.acceptedName || "") + "! Tilbudet på " + (offer.model && offer.model.name ? offer.model.name : "") +
+          " er registrert som akseptert. Selgeren tar kontakt med deg videre.";
+        acceptedState.hidden = false;
+        return;
+      }
+
+      document.getElementById("offerTitle").textContent = "Tilbud fra " + (offer.companyName || "");
+      document.getElementById("offerLede").textContent =
+        (offer.customerName ? offer.customerName + " — " : "") +
+        (offer.model && offer.model.name ? offer.model.name : "") +
+        (offer.validUntil ? " · Gyldig til " + offer.validUntil : "");
+
+      var rows = document.getElementById("offerRows");
+      if (offer.model) addRow(rows, offer.model.name, fmtNOK(offer.model.price));
+      if (offer.paint && offer.paint.name) addRow(rows, "Lakk: " + offer.paint.name, offer.paint.price ? fmtNOK(offer.paint.price) : "Inkludert");
+      if (offer.interior && offer.interior.name) addRow(rows, "Interiør: " + offer.interior.name, offer.interior.price ? fmtNOK(offer.interior.price) : "Inkludert");
+      (offer.extras || []).forEach(function (ex) {
+        addRow(rows, ex.name, fmtNOK(ex.price));
+      });
+      if (offer.tradeIn && offer.tradeIn.value) {
+        addRow(rows, offer.tradeIn.description || "Innbytte", "-" + fmtNOK(offer.tradeIn.value), true);
+      }
+      if (offer.discount && offer.discount.value) {
+        addRow(rows, offer.discount.description || "Rabatt", "-" + fmtNOK(offer.discount.value), true);
+      }
+      document.getElementById("offerTotal").textContent = fmtNOK(offer.total);
+
+      offerState.hidden = false;
+
+      var nameInput = document.getElementById("acceptName");
+      var checkInput = document.getElementById("acceptCheck");
+      var btn = document.getElementById("acceptBtn");
+
+      function refreshBtn() {
+        btn.disabled = !(nameInput.value.trim() && checkInput.checked);
+      }
+      nameInput.addEventListener("input", refreshBtn);
+      checkInput.addEventListener("change", refreshBtn);
+
+      btn.addEventListener("click", function () {
+        var name = nameInput.value.trim();
+        if (!name || !checkInput.checked) return;
+        btn.disabled = true;
+        btn.textContent = "Sender …";
+        fetch("/api/accept", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: id, name: name }),
+        })
+          .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+          .then(function (result) {
+            if (!result.ok) {
+              btn.disabled = false;
+              btn.textContent = "Godta tilbud";
+              showError("Kunne ikke registrere aksepten akkurat nå. Prøv igjen om litt, eller ta kontakt med selgeren.");
+              return;
+            }
+            offerState.hidden = true;
+            acceptedText.textContent =
+              "Takk, " + name + "! Tilbudet på " + (offer.model && offer.model.name ? offer.model.name : "") +
+              " er registrert som akseptert. Selgeren tar kontakt med deg videre.";
+            acceptedState.hidden = false;
+          })
+          .catch(function () {
+            btn.disabled = false;
+            btn.textContent = "Godta tilbud";
+            showError("Ingen kontakt med tjenesten. Sjekk internett og prøv igjen.");
+          });
+      });
+    })
+    .catch(function (err) {
+      if (err && err.code === "not_found") {
+        showError("Fant ikke dette tilbudet. Lenken kan være utløpt, eller selgeren har sendt et nytt tilbud. Ta kontakt med selgeren din.");
+      } else {
+        showError("Kunne ikke hente tilbudet akkurat nå. Prøv igjen om litt.");
+      }
+    });
+})();
+</script>
+</body>
+</html>
