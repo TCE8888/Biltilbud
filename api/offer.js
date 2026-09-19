@@ -64,6 +64,7 @@ module.exports = async function handler(req, res) {
     extras: offer.extras,
     tradeIn: offer.tradeIn,
     discount: offer.discount,
+    financing: offer.financing,
     total: offer.total,
     customerName: offer.customerName,
     validUntil: offer.validUntil,
