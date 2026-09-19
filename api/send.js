@@ -176,6 +176,14 @@ async function buildOfferPdf(data) {
     y -= 4;
   }
 
+  if (data.discount && data.discount.value) {
+    text("Rabatt", { font: bold, size: 11, color: muted, gap: 16 });
+    priceRow(data.discount.description || "Rabatt", "-" + formatNOK(data.discount.value), {
+      labelSize: 12, priceSize: 12, priceColor: warn, rowGap: 18,
+    });
+    y -= 4;
+  }
+
   hr();
   var totalStr = formatNOK(data.total);
   var totalRowY = y; // draw label and price on the same baseline, like priceRow does
@@ -245,7 +253,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { model, paint, interior, extras, tradeIn, customer, note, companyName, bcc, sellerName, sellerPhone } = body || {};
+  const { model, paint, interior, extras, tradeIn, discount, customer, note, companyName, bcc, sellerName, sellerPhone } = body || {};
 
   if (!model || typeof model.name !== "string" || typeof model.price !== "number") {
     res.status(400).json({ error: "missing_model" });
@@ -280,12 +288,23 @@ module.exports = async function handler(req, res) {
     if (tiDesc || tiValue) cleanTradeIn = { description: tiDesc, value: tiValue };
   }
 
+  // Discount works the same way as trade-in — it reduces the total. Same
+  // coercion rules: only an entirely empty discount is dropped.
+  let cleanDiscount = null;
+  if (discount && (typeof discount.description === "string" || discount.value != null)) {
+    var dDesc = typeof discount.description === "string" ? discount.description.trim() : "";
+    var dValue = Number(discount.value);
+    if (!isFinite(dValue) || dValue < 0) dValue = 0;
+    if (dDesc || dValue) cleanDiscount = { description: dDesc, value: dValue };
+  }
+
   const total =
     model.price +
     (cleanPaint ? cleanPaint.price : 0) +
     (cleanInterior ? cleanInterior.price : 0) +
     cleanExtras.reduce(function (sum, e) { return sum + e.price; }, 0) -
-    (cleanTradeIn ? cleanTradeIn.value : 0);
+    (cleanTradeIn ? cleanTradeIn.value : 0) -
+    (cleanDiscount ? cleanDiscount.value : 0);
 
   function fmtDate(d) {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -317,6 +336,7 @@ module.exports = async function handler(req, res) {
       interior: cleanInterior,
       extras: cleanExtras,
       tradeIn: cleanTradeIn,
+      discount: cleanDiscount,
       total: total,
       customer: customer,
       note: note || "",
