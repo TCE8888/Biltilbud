@@ -97,6 +97,7 @@ module.exports = async function handler(req, res) {
       var text =
         "Hei" + (greetName ? " " + greetName : "") + ",\n\n" +
         "Bare en liten påminnelse om tilbudet vi sendte deg på " + rec.modelName + ".\n" +
+        (rec.acceptUrl ? "Vil du godta tilbudet? Trykk her: " + rec.acceptUrl + "\n" : "") +
         "Er det noe du lurer på, bare si ifra" + contactSuffix + "!\n\n" +
         "Mvh " + signOff;
 
@@ -113,10 +114,15 @@ module.exports = async function handler(req, res) {
         "<p>Bare en liten påminnelse om tilbudet vi sendte deg på <strong>" +
         escapeHtml(rec.modelName) +
         "</strong>. Er det noe du lurer på, bare si ifra!</p>" +
-        (mailtoHref
+        (rec.acceptUrl
           ? '<p style="margin:22px 0;"><a href="' +
+            rec.acceptUrl +
+            '" style="display:inline-block;background:#2f6f5e;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;">Godta tilbudet digitalt</a></p>'
+          : "") +
+        (mailtoHref
+          ? '<p style="margin:' + (rec.acceptUrl ? "0 0 22px" : "22px 0") + ';"><a href="' +
             mailtoHref +
-            '" style="display:inline-block;background:#2f6f5e;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;">Svar her</a></p>'
+            '" style="color:#2f6f5e;font-weight:600;text-decoration:none;">Har du spørsmål? Svar her</a></p>'
           : "") +
         "<p>Mvh " + escapeHtml(signOff) + "</p>" +
         "</div>";
