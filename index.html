@@ -148,14 +148,22 @@
   .summary-total span:first-child { font-weight: 600; font-size: 14px; }
   .summary-total span:last-child { font-family: "IBM Plex Mono", monospace; font-weight: 700; font-size: 19px; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
 
-  footer { position: sticky; bottom: 0; padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, var(--bg) 60%, transparent); }
+  footer {
+    position: sticky; bottom: 0; padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, var(--bg) 60%, transparent);
+    display: flex; gap: 10px; max-width: 480px; margin: 0 auto; width: 100%; box-sizing: border-box;
+  }
   .send-btn {
-    max-width: 480px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px;
     background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 15px;
     font-family: "IBM Plex Sans", sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow);
   }
   .send-btn:disabled { background: var(--surface-sunken); color: var(--muted); box-shadow: none; cursor: not-allowed; }
   .send-btn:not(:disabled):active { background: var(--accent-strong); }
+  .send-btn.secondary-btn {
+    flex: 0 0 auto; background: var(--surface); color: var(--ink); box-shadow: none; border: 1px solid var(--line);
+  }
+  .send-btn.secondary-btn:not(:disabled):active { background: var(--surface-sunken); }
   .send-btn svg { width: 18px; height: 18px; }
   .send-btn .spinner {
     width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
@@ -310,6 +318,10 @@
 </main>
 
 <footer>
+  <button class="send-btn secondary-btn" id="printBtn" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+    <span id="printLabel">Skriv ut</span>
+  </button>
   <button class="send-btn" id="sendBtn" disabled>
     <svg id="sendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
     <span id="sendLabel">Send tilbud til kunde</span>
@@ -460,6 +472,8 @@
   var summaryFinancingRow = document.getElementById("summaryFinancingRow");
   var summaryTotal = document.getElementById("summaryTotal");
   var sendBtn = document.getElementById("sendBtn");
+  var printBtn = document.getElementById("printBtn");
+  var printLabel = document.getElementById("printLabel");
   var sendLabel = document.getElementById("sendLabel");
   var sendIcon = document.getElementById("sendIcon");
   var toast = document.getElementById("toast");
@@ -781,6 +795,9 @@
     var model = getSelectedModel();
     var emailOk = custEmail.value.trim().length > 3 && custEmail.value.indexOf("@") !== -1;
     sendBtn.disabled = !(model && emailOk);
+    // Printing doesn't need a customer email — just a model selected, same
+    // as picking anything at all in the app.
+    printBtn.disabled = !model;
   }
 
   custEmail.addEventListener("input", updateSendState);
@@ -881,6 +898,80 @@
     }
   }
 
+  // Builds the exact same request payload send() does (minus requiring a
+  // customer email), so a seller can print an offer for someone who wants
+  // it on paper rather than by email, even before customer details are
+  // filled in.
+  function buildOfferPayload() {
+    var model = getSelectedModel();
+    if (!model) return null;
+    return {
+      companyName: settings.companyName,
+      model: model,
+      paint: getSelectedPaint(),
+      interior: getSelectedInterior(),
+      extras: getSelectedExtras(),
+      tradeIn: getTradeIn(),
+      discount: getDiscount(),
+      financing: getFinancing(),
+      customer: {
+        name: custName.value.trim(),
+        phone: custPhone.value.trim(),
+        email: custEmail.value.trim()
+      },
+      note: custNote.value.trim(),
+      bcc: settings.dealerEmail || "",
+      sellerName: settings.sellerName || "",
+      sellerPhone: settings.sellerPhone || ""
+    };
+  }
+
+  async function printOffer() {
+    var payload = buildOfferPayload();
+    if (!payload) return;
+
+    // Open the tab synchronously, on the click itself, so the popup blocker
+    // doesn't kick in — we fill in its address once the PDF has arrived.
+    var printWindow = window.open("", "_blank");
+
+    printLabel.textContent = "Lager PDF …";
+    printBtn.disabled = true;
+    try {
+      var res = await fetch("/api/preview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-app-secret": settings.secret || ""
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        var data = await res.json().catch(function () { return {}; });
+        if (printWindow) printWindow.close();
+        if (res.status === 401) showToast("Feil nøkkel — sjekk innstillinger ⚙.");
+        else showToast("Kunne ikke lage utskrift (" + (data.error || res.status) + "). Prøv igjen.");
+        return;
+      }
+      var blob = await res.blob();
+      var url = URL.createObjectURL(blob);
+      if (printWindow) {
+        printWindow.location.href = url;
+      } else {
+        // Popup blocked despite opening synchronously (some browsers still
+        // block it) — fall back to a normal same-tab navigation so the
+        // seller can still get to the PDF and print it from there.
+        showToast("Åpner PDF i denne fanen — bruk tilbake-knappen for å komme til tilbudet igjen.");
+        window.location.href = url;
+      }
+    } catch (e) {
+      if (printWindow) printWindow.close();
+      showToast("Ingen kontakt med tjenesten. Sjekk internett og prøv igjen.");
+    } finally {
+      printLabel.textContent = "Skriv ut";
+      updateSendState();
+    }
+  }
+
   function resetForm() {
     state.extraNames = {};
     custName.value = "";
@@ -906,6 +997,7 @@
   }
 
   sendBtn.addEventListener("click", send);
+  printBtn.addEventListener("click", printOffer);
   settingsBtn.addEventListener("click", openSettings);
 
   function openSettings() {
