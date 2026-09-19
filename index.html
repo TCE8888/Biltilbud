@@ -214,6 +214,7 @@
     <button class="tabbtn" id="tabBtnInterior" role="tab" aria-selected="false">Interiør</button>
     <button class="tabbtn" id="tabBtnExtras" role="tab" aria-selected="false">Ekstrautstyr</button>
     <button class="tabbtn" id="tabBtnTradeIn" role="tab" aria-selected="false">Innbytte</button>
+    <button class="tabbtn" id="tabBtnDiscount" role="tab" aria-selected="false">Rabatt</button>
     <button class="tabbtn" id="tabBtnCustomer" role="tab" aria-selected="false">Kunde</button>
   </div>
 </div>
@@ -250,6 +251,17 @@
     <p style="color:var(--muted);font-size:13px;margin:0;">Verdien trekkes fra totalprisen i tilbudet. La feltene stå tomme hvis kunden ikke har innbytte.</p>
   </section>
 
+  <section id="panelDiscount" hidden>
+    <span class="field-label">Rabatt <span style="text-transform:none;font-weight:400;">(valgfritt)</span></span>
+    <div class="field">
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="discountValue" placeholder="Rabatt (kr)"></div>
+    </div>
+    <div class="field">
+      <div class="input-wrap"><input type="text" id="discountDesc" placeholder="F.eks. Sesongkampanje, forhandlerrabatt"></div>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin:0;">Beløpet trekkes fra totalprisen i tilbudet. La feltene stå tomme hvis det ikke gis rabatt.</p>
+  </section>
+
   <section id="panelCustomer" hidden>
     <span class="field-label">Kundeopplysninger</span>
     <div class="field">
@@ -271,6 +283,7 @@
     <div class="summary-row" id="summaryInteriorRow" hidden><span>Interiør</span><span>–</span></div>
     <div class="summary-row" id="summaryExtrasRow" hidden><span>Ekstrautstyr</span><span>–</span></div>
     <div class="summary-row" id="summaryTradeInRow" hidden><span>Innbytte</span><span>–</span></div>
+    <div class="summary-row" id="summaryDiscountRow" hidden><span>Rabatt</span><span>–</span></div>
     <div class="summary-total"><span>Totalpris</span><span id="summaryTotal">0 kr</span></div>
   </div>
 </main>
@@ -378,15 +391,19 @@
   var tabBtnInterior = document.getElementById("tabBtnInterior");
   var tabBtnExtras = document.getElementById("tabBtnExtras");
   var tabBtnTradeIn = document.getElementById("tabBtnTradeIn");
+  var tabBtnDiscount = document.getElementById("tabBtnDiscount");
   var tabBtnCustomer = document.getElementById("tabBtnCustomer");
   var panelModel = document.getElementById("panelModel");
   var panelPaint = document.getElementById("panelPaint");
   var panelInterior = document.getElementById("panelInterior");
   var panelExtras = document.getElementById("panelExtras");
   var panelTradeIn = document.getElementById("panelTradeIn");
+  var panelDiscount = document.getElementById("panelDiscount");
   var panelCustomer = document.getElementById("panelCustomer");
   var tradeInDesc = document.getElementById("tradeInDesc");
   var tradeInValue = document.getElementById("tradeInValue");
+  var discountValue = document.getElementById("discountValue");
+  var discountDesc = document.getElementById("discountDesc");
   var custName = document.getElementById("custName");
   var custPhone = document.getElementById("custPhone");
   var custEmail = document.getElementById("custEmail");
@@ -396,6 +413,7 @@
   var summaryInteriorRow = document.getElementById("summaryInteriorRow");
   var summaryExtrasRow = document.getElementById("summaryExtrasRow");
   var summaryTradeInRow = document.getElementById("summaryTradeInRow");
+  var summaryDiscountRow = document.getElementById("summaryDiscountRow");
   var summaryTotal = document.getElementById("summaryTotal");
   var sendBtn = document.getElementById("sendBtn");
   var sendLabel = document.getElementById("sendLabel");
@@ -421,6 +439,7 @@
     { btn: tabBtnInterior, panel: panelInterior },
     { btn: tabBtnExtras, panel: panelExtras },
     { btn: tabBtnTradeIn, panel: panelTradeIn },
+    { btn: tabBtnDiscount, panel: panelDiscount },
     { btn: tabBtnCustomer, panel: panelCustomer }
   ];
   function selectTab(idx) {
@@ -435,7 +454,8 @@
   tabBtnInterior.addEventListener("click", function () { selectTab(2); });
   tabBtnExtras.addEventListener("click", function () { selectTab(3); });
   tabBtnTradeIn.addEventListener("click", function () { selectTab(4); });
-  tabBtnCustomer.addEventListener("click", function () { selectTab(5); });
+  tabBtnDiscount.addEventListener("click", function () { selectTab(5); });
+  tabBtnCustomer.addEventListener("click", function () { selectTab(6); });
 
   function renderModels() {
     modelList.innerHTML = "";
@@ -600,12 +620,25 @@
     return { description: desc, value: value };
   }
 
+  // Discount works the same way as trade-in: a number plus a free-text
+  // explanation, read straight from the fields, reducing the total.
+  // Returns null when both are empty (no discount on this offer).
+  function getDiscount() {
+    var raw = discountValue.value.trim();
+    var value = raw ? Number(raw) : 0;
+    if (!isFinite(value) || value < 0) value = 0;
+    var desc = discountDesc.value.trim();
+    if (!desc && !value) return null;
+    return { description: desc, value: value };
+  }
+
   function updateSummary() {
     var model = getSelectedModel();
     var paint = getSelectedPaint();
     var interior = getSelectedInterior();
     var extras = getSelectedExtras();
     var tradeIn = getTradeIn();
+    var discount = getDiscount();
     var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
     summaryModelRow.querySelector("span:last-child").textContent = model ? (model.name + " · " + formatNOK(model.price)) : "–";
 
@@ -637,7 +670,14 @@
       summaryTradeInRow.hidden = true;
     }
 
-    var total = (model ? model.price : 0) + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum - (tradeIn ? tradeIn.value : 0);
+    if (discount && discount.value) {
+      summaryDiscountRow.hidden = false;
+      summaryDiscountRow.querySelector("span:last-child").textContent = "-" + formatNOK(discount.value);
+    } else {
+      summaryDiscountRow.hidden = true;
+    }
+
+    var total = (model ? model.price : 0) + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum - (tradeIn ? tradeIn.value : 0) - (discount ? discount.value : 0);
     summaryTotal.textContent = formatNOK(total);
     updateSendState();
   }
@@ -651,6 +691,8 @@
   custEmail.addEventListener("input", updateSendState);
   tradeInDesc.addEventListener("input", updateSummary);
   tradeInValue.addEventListener("input", updateSummary);
+  discountValue.addEventListener("input", updateSummary);
+  discountDesc.addEventListener("input", updateSummary);
 
   function setSending(isSending) {
     sendBtn.disabled = isSending || sendBtn.disabled;
@@ -680,13 +722,14 @@
     var interior = getSelectedInterior();
     var extras = getSelectedExtras();
     var tradeIn = getTradeIn();
+    var discount = getDiscount();
 
     // Safety net: recompute the total from exactly what is about to be sent
     // and compare it against the total currently shown on screen. If they
     // don't match, something is wrong (stale selection, etc.) — refuse to
     // send rather than mail out a wrong price.
     var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
-    var computedTotal = model.price + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum - (tradeIn ? tradeIn.value : 0);
+    var computedTotal = model.price + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum - (tradeIn ? tradeIn.value : 0) - (discount ? discount.value : 0);
     if (formatNOK(computedTotal) !== summaryTotal.textContent) {
       showToast("Fant et avvik i prisen — bytt fane og sjekk valgene før du sender igjen.");
       updateSummary();
@@ -708,6 +751,7 @@
           interior: interior,
           extras: extras,
           tradeIn: tradeIn,
+          discount: discount,
           customer: {
             name: custName.value.trim(),
             phone: custPhone.value.trim(),
@@ -742,6 +786,8 @@
     custNote.value = "";
     tradeInDesc.value = "";
     tradeInValue.value = "";
+    discountValue.value = "";
+    discountDesc.value = "";
     renderExtras();
     updateSummary();
     selectTab(0);
