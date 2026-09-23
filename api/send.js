@@ -3,6 +3,7 @@ const nodemailer = require("nodemailer");
 const { getReminderStore, REMINDER_KEY } = require("../reminderStore.js");
 const { getOfferStore, offerKey, OFFER_TTL_SECONDS } = require("../offerStore.js");
 const { LOGO_BYTES, formatNOK, buildOfferPdf, prepareOffer, loadCarImage } = require("../pdfBuilder.js");
+const { resolveSeller, sellerKeysConfigured } = require("../sellerAuth.js");
 
 // Vercel serverless function (Node runtime). Receives a model, a list of
 // checked extras, and customer contact details as JSON, builds a one-page
@@ -45,10 +46,27 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const appSecret = process.env.APP_SECRET;
-  if (appSecret && req.headers["x-app-secret"] !== appSecret) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
+  // Two ways to authenticate a request, tried in this order:
+  //  1. Per-seller codes (SELLER_KEYS env var) — once that's configured,
+  //     every request must match a known seller's own code, and the
+  //     seller's real name/phone (from the env var, not from whatever the
+  //     sending phone typed into Settings) is used on the offer from here
+  //     on, so it can't be faked.
+  //  2. The old single shared APP_SECRET — kept as a fallback for as long
+  //     as SELLER_KEYS isn't set up yet, so nothing breaks mid-transition.
+  const providedKey = req.headers["x-app-secret"] || "";
+  const seller = resolveSeller(providedKey);
+  if (sellerKeysConfigured()) {
+    if (!seller) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+  } else {
+    const appSecret = process.env.APP_SECRET;
+    if (appSecret && providedKey !== appSecret) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
   }
 
   const gmailUser = process.env.GMAIL_USER;
@@ -64,6 +82,12 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     res.status(400).json({ error: "invalid_body" });
     return;
+  }
+  // A verified seller's real name/phone always overrides whatever the
+  // sending phone had typed into Settings — that's the whole point of
+  // per-seller codes: the name on the offer can't be spoofed.
+  if (seller) {
+    body = Object.assign({}, body, { sellerName: seller.name, sellerPhone: seller.phone });
   }
 
   const offer = prepareOffer(body, { requireCustomerEmail: true });
