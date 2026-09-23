@@ -1,0 +1,1123 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biltilbud</title>
+<meta name="description" content="Sett sammen et nybil-tilbud og send det rett til kunden.">
+<meta name="theme-color" content="#2f6f5e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Biltilbud">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" href="/icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --surface-sunken: #efece3;
+    --ink: #1d2420;
+    --muted: #6c756e;
+    --line: #e2ddd0;
+    --accent: #2f6f5e;
+    --accent-strong: #1d4c40;
+    --accent-tint: #e4efe9;
+    --warn: #a8541f;
+    --warn-tint: #f5e7db;
+    --shadow: 0 1px 2px rgba(29,36,32,0.06), 0 6px 16px rgba(29,36,32,0.06);
+    --radius: 14px;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141a17;
+      --surface: #1c2420;
+      --surface-sunken: #222b26;
+      --ink: #eceae3;
+      --muted: #98a39a;
+      --line: #2c3833;
+      --accent: #58ab92;
+      --accent-strong: #7fc4ab;
+      --accent-tint: #22332c;
+      --warn: #e2a273;
+      --warn-tint: #35291f;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  [hidden] { display: none !important; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  header {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 18px; background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: baseline; gap: 8px; }
+  .brand-mark {
+    font-family: "IBM Plex Mono", monospace; font-weight: 700; font-size: 11px; letter-spacing: 0.09em;
+    color: var(--accent-strong); background: var(--accent-tint); border: 1px solid var(--accent);
+    border-radius: 6px; padding: 2px 6px;
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .icon-btn {
+    appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+    cursor: pointer; font-size: 17px; flex: none;
+  }
+  .icon-btn:active { transform: translateY(1px); }
+
+  main {
+    flex: 1; overflow-y: auto; padding: 14px 18px 12px; display: flex; flex-direction: column; gap: 16px;
+    max-width: 480px; width: 100%; margin: 0 auto;
+  }
+
+  .tabbar-wrap {
+    flex: none; padding: 10px 18px; max-width: 480px; width: 100%; margin: 0 auto;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .tabbar {
+    display: flex; gap: 6px; background: var(--surface-sunken); padding: 4px; border-radius: 12px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .tabbar::-webkit-scrollbar { display: none; }
+  .tabbtn {
+    flex: 0 0 auto; appearance: none; border: none; background: transparent; color: var(--muted);
+    font-family: "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 13px; padding: 10px 14px;
+    border-radius: 9px; cursor: pointer; white-space: nowrap;
+  }
+  .tabbtn[aria-selected="true"] { background: var(--surface); color: var(--accent-strong); box-shadow: var(--shadow); }
+
+  .field-label {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;
+  }
+
+  .model-list, .extra-list, .paint-list, .interior-list { display: flex; flex-direction: column; gap: 8px; }
+  .pick-card {
+    display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px 14px; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .pick-card[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset, var(--shadow); }
+  .pick-mark {
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); flex: none;
+    display: grid; place-items: center;
+  }
+  .pick-card[aria-pressed="true"] .pick-mark { border-color: var(--accent); background: var(--accent); }
+  .pick-card[aria-pressed="true"] .pick-mark::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+  .extra-list .pick-mark { border-radius: 6px; }
+  .extra-list .pick-card[aria-pressed="true"] .pick-mark::after { width: 10px; height: 10px; border-radius: 2px; }
+  .pick-name { flex: 1; font-size: 15px; font-weight: 500; }
+  .pick-price { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .pick-card[aria-pressed="true"] .pick-price { color: var(--accent-strong); }
+  .empty-hint { color: var(--muted); font-size: 13px; padding: 10px 2px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .input-wrap { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 11px 13px; }
+  .input-wrap:focus-within { border-color: var(--accent); }
+  .input-wrap input, .input-wrap textarea {
+    border: none; outline: none; background: transparent; color: var(--ink);
+    font-family: "IBM Plex Sans", sans-serif; font-size: 15px; width: 100%;
+  }
+  .input-wrap textarea { resize: none; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .summary-card {
+    border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);
+    box-shadow: var(--shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .summary-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .summary-row span:last-child { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+  .summary-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--line); }
+  .summary-total span:first-child { font-weight: 600; font-size: 14px; }
+  .summary-total span:last-child { font-family: "IBM Plex Mono", monospace; font-weight: 700; font-size: 19px; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
+
+  footer {
+    position: sticky; bottom: 0; padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, var(--bg) 60%, transparent);
+    display: flex; gap: 10px; max-width: 480px; margin: 0 auto; width: 100%; box-sizing: border-box;
+  }
+  .send-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 15px;
+    font-family: "IBM Plex Sans", sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .send-btn:disabled { background: var(--surface-sunken); color: var(--muted); box-shadow: none; cursor: not-allowed; }
+  .send-btn:not(:disabled):active { background: var(--accent-strong); }
+  .send-btn.secondary-btn {
+    flex: 0 0 auto; background: var(--surface); color: var(--ink); box-shadow: none; border: 1px solid var(--line);
+  }
+  .send-btn.secondary-btn:not(:disabled):active { background: var(--surface-sunken); }
+  .send-btn svg { width: 18px; height: 18px; }
+  .send-btn .spinner {
+    width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+    animation: spin 0.7s linear infinite; flex: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 8px);
+    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 500;
+    box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 30; max-width: 80vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
+  .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,26,23,0.45); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+  .sheet { background: var(--bg); width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 0px)); max-height: 85vh; overflow-y: auto; box-shadow: 0 -8px 30px rgba(0,0,0,0.25); }
+  .sheet h2 { font-size: 16px; margin: 0 0 4px; }
+  .sheet p.hint { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .sheet-section { margin-bottom: 20px; }
+  .sheet-section:last-of-type { margin-bottom: 8px; }
+  .item-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .item-row { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+  .item-row .input-wrap { padding: 6px 10px; }
+  .item-row .item-name { flex: 1.4; }
+  .item-row .item-price { flex: 1; }
+  .item-row .item-price input { text-align: right; }
+  .item-row button { appearance: none; border: none; background: transparent; color: var(--warn); font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 4px; flex: none; }
+  .add-row { display: flex; gap: 8px; align-items: center; }
+  .add-row .input-wrap { padding: 8px 10px; }
+  .add-row .item-name { flex: 1.4; }
+  .add-row .item-price { flex: 1; }
+  .add-row .item-price input { text-align: right; }
+  .add-row button { background: var(--accent-tint); color: var(--accent-strong); border: 1px solid var(--accent); border-radius: 10px; padding: 0 14px; font-weight: 600; cursor: pointer; flex: none; height: 38px; }
+  .sheet-close { width: 100%; background: var(--ink); color: var(--bg); border: none; border-radius: 12px; padding: 13px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 4px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Biltilbud</h1>
+    <span class="brand-mark">TC</span>
+  </div>
+  <button class="icon-btn" id="settingsBtn" aria-label="Innstillinger" title="Innstillinger">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+  </button>
+</header>
+
+<div class="tabbar-wrap">
+  <div class="tabbar" role="tablist">
+    <button class="tabbtn" id="tabBtnModel" role="tab" aria-selected="true">Modell</button>
+    <button class="tabbtn" id="tabBtnPaint" role="tab" aria-selected="false">Lakk</button>
+    <button class="tabbtn" id="tabBtnInterior" role="tab" aria-selected="false">Interiør</button>
+    <button class="tabbtn" id="tabBtnExtras" role="tab" aria-selected="false">Ekstrautstyr</button>
+    <button class="tabbtn" id="tabBtnTradeIn" role="tab" aria-selected="false">Innbytte</button>
+    <button class="tabbtn" id="tabBtnDiscount" role="tab" aria-selected="false">Rabatt</button>
+    <button class="tabbtn" id="tabBtnFinancing" role="tab" aria-selected="false">Finansiering</button>
+    <button class="tabbtn" id="tabBtnCustomer" role="tab" aria-selected="false">Kunde</button>
+  </div>
+</div>
+
+<main>
+  <section id="panelModel">
+    <span class="field-label">Velg modell</span>
+    <div class="model-list" id="modelList"></div>
+  </section>
+
+  <section id="panelPaint" hidden>
+    <span class="field-label">Velg lakk</span>
+    <div class="paint-list" id="paintList"></div>
+  </section>
+
+  <section id="panelInterior" hidden>
+    <span class="field-label">Velg interiør</span>
+    <div class="interior-list" id="interiorList"></div>
+  </section>
+
+  <section id="panelExtras" hidden>
+    <span class="field-label">Velg ekstrautstyr</span>
+    <div class="extra-list" id="extraList"></div>
+  </section>
+
+  <section id="panelTradeIn" hidden>
+    <span class="field-label">Innbyttebil <span style="text-transform:none;font-weight:400;">(valgfritt)</span></span>
+    <div class="field">
+      <div class="input-wrap"><input type="text" id="tradeInDesc" placeholder="F.eks. VW Golf 2018, reg.nr AB12345"></div>
+    </div>
+    <div class="field">
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="tradeInValue" placeholder="Verdi (kr)"></div>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin:0;">Verdien trekkes fra totalprisen i tilbudet. La feltene stå tomme hvis kunden ikke har innbytte.</p>
+  </section>
+
+  <section id="panelDiscount" hidden>
+    <span class="field-label">Rabatt <span style="text-transform:none;font-weight:400;">(valgfritt)</span></span>
+    <div class="field">
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="discountValue" placeholder="Rabatt (kr)"></div>
+    </div>
+    <div class="field">
+      <div class="input-wrap"><input type="text" id="discountDesc" placeholder="F.eks. Sesongkampanje, forhandlerrabatt"></div>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin:0;">Beløpet trekkes fra totalprisen i tilbudet. La feltene stå tomme hvis det ikke gis rabatt.</p>
+  </section>
+
+  <section id="panelFinancing" hidden>
+    <span class="field-label">Finansieringseksempel <span style="text-transform:none;font-weight:400;">(valgfritt)</span></span>
+    <div class="row2" style="margin-bottom:14px;">
+      <div class="input-wrap"><input type="number" inputmode="decimal" step="0.1" id="financeRate" placeholder="Rente % p.a."></div>
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="financeMonths" placeholder="Løpetid (mnd)"></div>
+    </div>
+    <div class="field">
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="financeDownPayment" placeholder="Egenkapital (kr)"></div>
+    </div>
+    <div class="row2" style="margin-bottom:14px;">
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="financeEstablishmentFee" placeholder="Etableringsgebyr (kr)"></div>
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="financeRegistrationFee" placeholder="Tinglysningsgebyr (kr)"></div>
+    </div>
+    <div class="field">
+      <div class="input-wrap"><input type="number" inputmode="numeric" id="financeMonthlyFee" placeholder="Termingebyr (kr/mnd)"></div>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin:0;">Fyll ut rente og løpetid for å vise en omtrentlig månedspris ved siden av kontantprisen. Gebyrene er forhåndsutfylt fra innstillinger ⚙ — juster der når banken endrer dem, eller overstyr her for et enkelt tilbud. La feltene stå tomme for å utelate finansiering fra tilbudet.</p>
+  </section>
+
+  <section id="panelCustomer" hidden>
+    <span class="field-label">Kundeopplysninger</span>
+    <div class="field">
+      <div class="input-wrap"><input type="text" id="custName" placeholder="Navn"></div>
+    </div>
+    <div class="row2" style="margin-bottom:14px;">
+      <div class="input-wrap"><input type="tel" id="custPhone" placeholder="Telefon"></div>
+      <div class="input-wrap"><input type="email" id="custEmail" placeholder="E-post"></div>
+    </div>
+    <div class="field">
+      <span class="field-label">Notat <span style="text-transform:none;font-weight:400;">(valgfritt)</span></span>
+      <div class="input-wrap"><textarea id="custNote" rows="2" placeholder="F.eks. leveringstid eller innbytte"></textarea></div>
+    </div>
+  </section>
+
+  <div class="summary-card">
+    <div class="summary-row" id="summaryModelRow"><span>Modell</span><span>–</span></div>
+    <div class="summary-row" id="summaryPaintRow" hidden><span>Lakk</span><span>–</span></div>
+    <div class="summary-row" id="summaryInteriorRow" hidden><span>Interiør</span><span>–</span></div>
+    <div class="summary-row" id="summaryExtrasRow" hidden><span>Ekstrautstyr</span><span>–</span></div>
+    <div class="summary-row" id="summaryTradeInRow" hidden><span>Innbytte</span><span>–</span></div>
+    <div class="summary-row" id="summaryDiscountRow" hidden><span>Rabatt</span><span>–</span></div>
+    <div class="summary-total"><span>Totalpris</span><span id="summaryTotal">0 kr</span></div>
+    <div class="summary-row" id="summaryFinancingRow" hidden><span>Ca. per måned</span><span>–</span></div>
+  </div>
+</main>
+
+<footer>
+  <button class="send-btn secondary-btn" id="printBtn" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+    <span id="printLabel">Skriv ut</span>
+  </button>
+  <button class="send-btn" id="sendBtn" disabled>
+    <svg id="sendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    <span id="sendLabel">Send tilbud til kunde</span>
+  </button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  // Faste priser (modeller, lakk, interiør, ekstrautstyr) hentes fra
+  // /prices.json, som er felles for alle som bruker appen — dette filen
+  // redigeres på GitHub (fungerer best på PC), ikke i appen selv, slik at
+  // alle selgere alltid ser samme priser uten å måtte legge dem inn selv.
+  var FALLBACK_PRICES = {
+    models: [{ name: "Modell A", price: 350000, extras: [], paints: [], interiors: [] }]
+  };
+
+  var DEFAULTS = { companyName: "Autosalg", dealerEmail: "", secret: "" };
+
+  // A number stored as a plain string ("" when unset) so it round-trips
+  // through an <input type="number"> without turning into "0" the first
+  // time settings are saved.
+  function numStr(v) {
+    return typeof v === "string" || typeof v === "number" ? String(v) : "";
+  }
+
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem("biltilbud.settings");
+      if (raw) {
+        var p = JSON.parse(raw);
+        return {
+          companyName: typeof p.companyName === "string" && p.companyName ? p.companyName : DEFAULTS.companyName,
+          dealerEmail: typeof p.dealerEmail === "string" ? p.dealerEmail : DEFAULTS.dealerEmail,
+          sellerName: typeof p.sellerName === "string" ? p.sellerName : "",
+          sellerPhone: typeof p.sellerPhone === "string" ? p.sellerPhone : "",
+          secret: typeof p.secret === "string" ? p.secret : DEFAULTS.secret,
+          defaultEstablishmentFee: numStr(p.defaultEstablishmentFee),
+          defaultRegistrationFee: numStr(p.defaultRegistrationFee),
+          defaultMonthlyFee: numStr(p.defaultMonthlyFee)
+        };
+      }
+    } catch (e) {}
+    return {
+      companyName: DEFAULTS.companyName, dealerEmail: DEFAULTS.dealerEmail, sellerName: "", sellerPhone: "", secret: DEFAULTS.secret,
+      defaultEstablishmentFee: "", defaultRegistrationFee: "", defaultMonthlyFee: ""
+    };
+  }
+
+  function saveSettings(s) {
+    try {
+      localStorage.setItem("biltilbud.settings", JSON.stringify({
+        companyName: s.companyName, dealerEmail: s.dealerEmail,
+        sellerName: s.sellerName, sellerPhone: s.sellerPhone, secret: s.secret,
+        defaultEstablishmentFee: s.defaultEstablishmentFee, defaultRegistrationFee: s.defaultRegistrationFee, defaultMonthlyFee: s.defaultMonthlyFee
+      }));
+    } catch (e) {}
+  }
+
+  function cachePrices(p) {
+    try { localStorage.setItem("biltilbud.pricesCache", JSON.stringify(p)); } catch (e) {}
+  }
+  function loadCachedPrices() {
+    try {
+      var raw = localStorage.getItem("biltilbud.pricesCache");
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return null;
+  }
+
+  async function loadPrices() {
+    try {
+      var res = await fetch("/prices.json?t=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) throw new Error("bad status");
+      var data = await res.json();
+      var normalized = {
+        models: (Array.isArray(data.models) ? data.models : []).map(function (m) {
+          return {
+            name: m.name,
+            price: m.price,
+            extras: Array.isArray(m.extras) ? m.extras : [],
+            paints: Array.isArray(m.paints) ? m.paints : [],
+            interiors: Array.isArray(m.interiors) ? m.interiors : []
+          };
+        })
+      };
+      cachePrices(normalized);
+      return normalized;
+    } catch (e) {
+      var cached = loadCachedPrices();
+      if (cached) {
+        showToast("Fikk ikke hentet nyeste priser — viser sist lagrede.");
+        return cached;
+      }
+      showToast("Fikk ikke hentet priser — sjekk internett og prøv igjen.");
+      return FALLBACK_PRICES;
+    }
+  }
+
+  var settings = loadSettings();
+  settings.models = [];
+  // Selections are tracked by NAME, not by array position. This means a
+  // stale/rebuilt list can never point at the wrong item or silently lose
+  // a selection — the lookup either finds the named item or it doesn't.
+  var state = { modelName: null, paintName: null, interiorName: null, extraNames: {} };
+
+  var modelList = document.getElementById("modelList");
+  var paintList = document.getElementById("paintList");
+  var interiorList = document.getElementById("interiorList");
+  var extraList = document.getElementById("extraList");
+  var tabBtnModel = document.getElementById("tabBtnModel");
+  var tabBtnPaint = document.getElementById("tabBtnPaint");
+  var tabBtnInterior = document.getElementById("tabBtnInterior");
+  var tabBtnExtras = document.getElementById("tabBtnExtras");
+  var tabBtnTradeIn = document.getElementById("tabBtnTradeIn");
+  var tabBtnDiscount = document.getElementById("tabBtnDiscount");
+  var tabBtnFinancing = document.getElementById("tabBtnFinancing");
+  var tabBtnCustomer = document.getElementById("tabBtnCustomer");
+  var panelModel = document.getElementById("panelModel");
+  var panelPaint = document.getElementById("panelPaint");
+  var panelInterior = document.getElementById("panelInterior");
+  var panelExtras = document.getElementById("panelExtras");
+  var panelTradeIn = document.getElementById("panelTradeIn");
+  var panelDiscount = document.getElementById("panelDiscount");
+  var panelFinancing = document.getElementById("panelFinancing");
+  var panelCustomer = document.getElementById("panelCustomer");
+  var tradeInDesc = document.getElementById("tradeInDesc");
+  var tradeInValue = document.getElementById("tradeInValue");
+  var discountValue = document.getElementById("discountValue");
+  var discountDesc = document.getElementById("discountDesc");
+  var financeRate = document.getElementById("financeRate");
+  var financeMonths = document.getElementById("financeMonths");
+  var financeDownPayment = document.getElementById("financeDownPayment");
+  var financeEstablishmentFee = document.getElementById("financeEstablishmentFee");
+  var financeRegistrationFee = document.getElementById("financeRegistrationFee");
+  var financeMonthlyFee = document.getElementById("financeMonthlyFee");
+  var custName = document.getElementById("custName");
+  var custPhone = document.getElementById("custPhone");
+  var custEmail = document.getElementById("custEmail");
+  var custNote = document.getElementById("custNote");
+  var summaryModelRow = document.getElementById("summaryModelRow");
+  var summaryPaintRow = document.getElementById("summaryPaintRow");
+  var summaryInteriorRow = document.getElementById("summaryInteriorRow");
+  var summaryExtrasRow = document.getElementById("summaryExtrasRow");
+  var summaryTradeInRow = document.getElementById("summaryTradeInRow");
+  var summaryDiscountRow = document.getElementById("summaryDiscountRow");
+  var summaryFinancingRow = document.getElementById("summaryFinancingRow");
+  var summaryTotal = document.getElementById("summaryTotal");
+  var sendBtn = document.getElementById("sendBtn");
+  var printBtn = document.getElementById("printBtn");
+  var printLabel = document.getElementById("printLabel");
+  var sendLabel = document.getElementById("sendLabel");
+  var sendIcon = document.getElementById("sendIcon");
+  var toast = document.getElementById("toast");
+  var settingsBtn = document.getElementById("settingsBtn");
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { toast.classList.remove("show"); }, 3200);
+  }
+
+  function formatNOK(n) {
+    var v = Math.round(Number(n) || 0);
+    return v.toLocaleString("nb-NO") + " kr";
+  }
+
+  var tabs = [
+    { btn: tabBtnModel, panel: panelModel },
+    { btn: tabBtnPaint, panel: panelPaint },
+    { btn: tabBtnInterior, panel: panelInterior },
+    { btn: tabBtnExtras, panel: panelExtras },
+    { btn: tabBtnTradeIn, panel: panelTradeIn },
+    { btn: tabBtnDiscount, panel: panelDiscount },
+    { btn: tabBtnFinancing, panel: panelFinancing },
+    { btn: tabBtnCustomer, panel: panelCustomer }
+  ];
+  function selectTab(idx) {
+    tabs.forEach(function (t, i) {
+      var on = i === idx;
+      t.btn.setAttribute("aria-selected", on ? "true" : "false");
+      t.panel.hidden = !on;
+    });
+  }
+  tabBtnModel.addEventListener("click", function () { selectTab(0); });
+  tabBtnPaint.addEventListener("click", function () { selectTab(1); });
+  tabBtnInterior.addEventListener("click", function () { selectTab(2); });
+  tabBtnExtras.addEventListener("click", function () { selectTab(3); });
+  tabBtnTradeIn.addEventListener("click", function () { selectTab(4); });
+  tabBtnDiscount.addEventListener("click", function () { selectTab(5); });
+  tabBtnFinancing.addEventListener("click", function () { selectTab(6); });
+  tabBtnCustomer.addEventListener("click", function () { selectTab(7); });
+
+  function renderModels() {
+    modelList.innerHTML = "";
+    if (!settings.models.length) {
+      modelList.innerHTML = '<div class="empty-hint">Ingen modeller registrert i prices.json ennå.</div>';
+      return;
+    }
+    settings.models.forEach(function (m) {
+      var card = document.createElement("div");
+      card.className = "pick-card";
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-pressed", state.modelName === m.name ? "true" : "false");
+      card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(m.name) + '</span><span class="pick-price">' + formatNOK(m.price) + '</span>';
+      card.addEventListener("click", function () {
+        if (state.modelName !== m.name) {
+          state.modelName = m.name;
+          state.paintName = (m.paints && m.paints.length) ? m.paints[0].name : null;
+          state.interiorName = (m.interiors && m.interiors.length) ? m.interiors[0].name : null;
+          state.extraNames = {};
+          renderModels();
+          renderPaints();
+          renderInteriors();
+          renderExtras();
+          updateSummary();
+        }
+      });
+      modelList.appendChild(card);
+    });
+  }
+
+  function currentExtras() {
+    var model = getSelectedModel();
+    return model && Array.isArray(model.extras) ? model.extras : [];
+  }
+  function currentPaints() {
+    var model = getSelectedModel();
+    return model && Array.isArray(model.paints) ? model.paints : [];
+  }
+  function currentInteriors() {
+    var model = getSelectedModel();
+    return model && Array.isArray(model.interiors) ? model.interiors : [];
+  }
+
+  function renderPaints() {
+    paintList.innerHTML = "";
+    var model = getSelectedModel();
+    if (!model) {
+      paintList.innerHTML = '<div class="empty-hint">Velg en modell først under fanen Modell.</div>';
+      return;
+    }
+    var paints = currentPaints();
+    if (!paints.length) {
+      paintList.innerHTML = '<div class="empty-hint">Ingen lakkfarger registrert for ' + escapeHtml(model.name) + '.</div>';
+      return;
+    }
+    paints.forEach(function (p) {
+      var card = document.createElement("div");
+      card.className = "pick-card";
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-pressed", state.paintName === p.name ? "true" : "false");
+      card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(p.name) + '</span><span class="pick-price">' + (p.price ? formatNOK(p.price) : "Inkludert") + '</span>';
+      card.addEventListener("click", function () {
+        state.paintName = p.name;
+        renderPaints();
+        updateSummary();
+      });
+      paintList.appendChild(card);
+    });
+  }
+
+  function renderInteriors() {
+    interiorList.innerHTML = "";
+    var model = getSelectedModel();
+    if (!model) {
+      interiorList.innerHTML = '<div class="empty-hint">Velg en modell først under fanen Modell.</div>';
+      return;
+    }
+    var interiors = currentInteriors();
+    if (!interiors.length) {
+      interiorList.innerHTML = '<div class="empty-hint">Ingen interiørvalg registrert for ' + escapeHtml(model.name) + '.</div>';
+      return;
+    }
+    interiors.forEach(function (it) {
+      var card = document.createElement("div");
+      card.className = "pick-card";
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-pressed", state.interiorName === it.name ? "true" : "false");
+      card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(it.name) + '</span><span class="pick-price">' + (it.price ? formatNOK(it.price) : "Inkludert") + '</span>';
+      card.addEventListener("click", function () {
+        state.interiorName = it.name;
+        renderInteriors();
+        updateSummary();
+      });
+      interiorList.appendChild(card);
+    });
+  }
+
+  function renderExtras() {
+    extraList.innerHTML = "";
+    var model = getSelectedModel();
+    if (!model) {
+      extraList.innerHTML = '<div class="empty-hint">Velg en modell først under fanen Modell.</div>';
+      return;
+    }
+    var extras = currentExtras();
+    if (!extras.length) {
+      extraList.innerHTML = '<div class="empty-hint">Ingen ekstrautstyr registrert for ' + escapeHtml(model.name) + '.</div>';
+      return;
+    }
+    extras.forEach(function (ex) {
+      var picked = !!state.extraNames[ex.name];
+      var card = document.createElement("div");
+      card.className = "pick-card";
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-pressed", picked ? "true" : "false");
+      card.innerHTML = '<span class="pick-mark"></span><span class="pick-name">' + escapeHtml(ex.name) + '</span><span class="pick-price">' + formatNOK(ex.price) + '</span>';
+      card.addEventListener("click", function () {
+        if (state.extraNames[ex.name]) delete state.extraNames[ex.name];
+        else state.extraNames[ex.name] = true;
+        renderExtras();
+        updateSummary();
+      });
+      extraList.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function findByName(list, name) {
+    if (!name) return null;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].name === name) return list[i];
+    }
+    return null;
+  }
+  function getSelectedModel() {
+    return findByName(settings.models, state.modelName);
+  }
+  function getSelectedPaint() {
+    return findByName(currentPaints(), state.paintName);
+  }
+  function getSelectedInterior() {
+    return findByName(currentInteriors(), state.interiorName);
+  }
+  function getSelectedExtras() {
+    return currentExtras().filter(function (ex) { return !!state.extraNames[ex.name]; });
+  }
+
+  // Trade-in isn't a catalog item like model/paint/etc — it's free text plus
+  // a number the seller types in per offer, read straight from the fields.
+  // Returns null when both are empty (no trade-in on this offer).
+  function getTradeIn() {
+    var desc = tradeInDesc.value.trim();
+    var raw = tradeInValue.value.trim();
+    var value = raw ? Number(raw) : 0;
+    if (!isFinite(value) || value < 0) value = 0;
+    if (!desc && !value) return null;
+    return { description: desc, value: value };
+  }
+
+  // Discount works the same way as trade-in: a number plus a free-text
+  // explanation, read straight from the fields, reducing the total.
+  // Returns null when both are empty (no discount on this offer).
+  function getDiscount() {
+    var raw = discountValue.value.trim();
+    var value = raw ? Number(raw) : 0;
+    if (!isFinite(value) || value < 0) value = 0;
+    var desc = discountDesc.value.trim();
+    if (!desc && !value) return null;
+    return { description: desc, value: value };
+  }
+
+  // Simple annuity loan calculation (the standard "billån" in Norway) —
+  // not leasing, which is priced off a residual value instead and would
+  // need a separate calculator. Returns null unless both an interest rate
+  // and a loan term are filled in; down payment alone isn't enough to show
+  // a monthly figure.
+  function getFinancing() {
+    var rawRate = financeRate.value.trim();
+    var rawMonths = financeMonths.value.trim();
+    var rawDown = financeDownPayment.value.trim();
+    var rawEstFee = financeEstablishmentFee.value.trim();
+    var rawRegFee = financeRegistrationFee.value.trim();
+    var rawMonthlyFee = financeMonthlyFee.value.trim();
+    if (!rawRate && !rawMonths && !rawDown && !rawEstFee && !rawRegFee && !rawMonthlyFee) return null;
+
+    var rate = rawRate ? Number(rawRate) : 0;
+    if (!isFinite(rate) || rate < 0) rate = 0;
+    var months = rawMonths ? Math.round(Number(rawMonths)) : 0;
+    if (!isFinite(months) || months <= 0) return null; // no loan term — nothing to show
+    var downPayment = rawDown ? Number(rawDown) : 0;
+    if (!isFinite(downPayment) || downPayment < 0) downPayment = 0;
+    var establishmentFee = rawEstFee ? Number(rawEstFee) : 0;
+    if (!isFinite(establishmentFee) || establishmentFee < 0) establishmentFee = 0;
+    var registrationFee = rawRegFee ? Number(rawRegFee) : 0;
+    if (!isFinite(registrationFee) || registrationFee < 0) registrationFee = 0;
+    var monthlyFee = rawMonthlyFee ? Number(rawMonthlyFee) : 0;
+    if (!isFinite(monthlyFee) || monthlyFee < 0) monthlyFee = 0;
+
+    return { rate: rate, months: months, downPayment: downPayment, establishmentFee: establishmentFee, registrationFee: registrationFee, monthlyFee: monthlyFee };
+  }
+
+  function monthlyPayment(principal, ratePct, months) {
+    var p = Math.max(0, principal);
+    var monthlyRate = ratePct / 100 / 12;
+    if (p <= 0 || months <= 0) return 0;
+    if (monthlyRate === 0) return p / months;
+    return (p * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));
+  }
+
+  function updateSummary() {
+    var model = getSelectedModel();
+    var paint = getSelectedPaint();
+    var interior = getSelectedInterior();
+    var extras = getSelectedExtras();
+    var tradeIn = getTradeIn();
+    var discount = getDiscount();
+    var financing = getFinancing();
+    var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
+    summaryModelRow.querySelector("span:last-child").textContent = model ? (model.name + " · " + formatNOK(model.price)) : "–";
+
+    if (paint) {
+      summaryPaintRow.hidden = false;
+      summaryPaintRow.querySelector("span:last-child").textContent = paint.name + (paint.price ? " · " + formatNOK(paint.price) : "");
+    } else {
+      summaryPaintRow.hidden = true;
+    }
+
+    if (interior) {
+      summaryInteriorRow.hidden = false;
+      summaryInteriorRow.querySelector("span:last-child").textContent = interior.name + (interior.price ? " · " + formatNOK(interior.price) : "");
+    } else {
+      summaryInteriorRow.hidden = true;
+    }
+
+    if (extras.length) {
+      summaryExtrasRow.hidden = false;
+      summaryExtrasRow.querySelector("span:last-child").textContent = extras.length + " valgt · " + formatNOK(extrasSum);
+    } else {
+      summaryExtrasRow.hidden = true;
+    }
+
+    if (tradeIn && tradeIn.value) {
+      summaryTradeInRow.hidden = false;
+      summaryTradeInRow.querySelector("span:last-child").textContent = "-" + formatNOK(tradeIn.value);
+    } else {
+      summaryTradeInRow.hidden = true;
+    }
+
+    if (discount && discount.value) {
+      summaryDiscountRow.hidden = false;
+      summaryDiscountRow.querySelector("span:last-child").textContent = "-" + formatNOK(discount.value);
+    } else {
+      summaryDiscountRow.hidden = true;
+    }
+
+    var total = (model ? model.price : 0) + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum - (tradeIn ? tradeIn.value : 0) - (discount ? discount.value : 0);
+    summaryTotal.textContent = formatNOK(total);
+
+    if (financing) {
+      var loanPrincipal = total - financing.downPayment + financing.establishmentFee + financing.registrationFee;
+      var monthly = monthlyPayment(loanPrincipal, financing.rate, financing.months) + financing.monthlyFee;
+      summaryFinancingRow.hidden = false;
+      summaryFinancingRow.querySelector("span:last-child").textContent = "ca. " + formatNOK(monthly) + "/mnd";
+    } else {
+      summaryFinancingRow.hidden = true;
+    }
+
+    updateSendState();
+  }
+
+  function updateSendState() {
+    var model = getSelectedModel();
+    var emailOk = custEmail.value.trim().length > 3 && custEmail.value.indexOf("@") !== -1;
+    sendBtn.disabled = !(model && emailOk);
+    // Printing doesn't need a customer email — just a model selected, same
+    // as picking anything at all in the app.
+    printBtn.disabled = !model;
+  }
+
+  custEmail.addEventListener("input", updateSendState);
+  tradeInDesc.addEventListener("input", updateSummary);
+  tradeInValue.addEventListener("input", updateSummary);
+  discountValue.addEventListener("input", updateSummary);
+  discountDesc.addEventListener("input", updateSummary);
+  financeRate.addEventListener("input", updateSummary);
+  financeMonths.addEventListener("input", updateSummary);
+  financeDownPayment.addEventListener("input", updateSummary);
+  financeEstablishmentFee.addEventListener("input", updateSummary);
+  financeRegistrationFee.addEventListener("input", updateSummary);
+  financeMonthlyFee.addEventListener("input", updateSummary);
+
+  function setSending(isSending) {
+    sendBtn.disabled = isSending || sendBtn.disabled;
+    if (!isSending) updateSendState();
+    sendIcon.style.display = isSending ? "none" : "";
+    var spinner = document.getElementById("sendSpinner");
+    if (isSending && !spinner) {
+      spinner = document.createElement("span");
+      spinner.id = "sendSpinner";
+      spinner.className = "spinner";
+      sendBtn.insertBefore(spinner, sendLabel);
+    }
+    if (spinner) spinner.style.display = isSending ? "" : "none";
+    sendLabel.textContent = isSending ? "Sender …" : "Send tilbud til kunde";
+  }
+
+  async function send() {
+    var model = getSelectedModel();
+    if (!model) return;
+    var email = custEmail.value.trim();
+    if (!email) {
+      showToast("Legg inn kundens e-post under fanen Kunde.");
+      return;
+    }
+
+    var paint = getSelectedPaint();
+    var interior = getSelectedInterior();
+    var extras = getSelectedExtras();
+    var tradeIn = getTradeIn();
+    var discount = getDiscount();
+    var financing = getFinancing();
+
+    // Safety net: recompute the total from exactly what is about to be sent
+    // and compare it against the total currently shown on screen. If they
+    // don't match, something is wrong (stale selection, etc.) — refuse to
+    // send rather than mail out a wrong price.
+    var extrasSum = extras.reduce(function (s, e) { return s + e.price; }, 0);
+    var computedTotal = model.price + (paint ? paint.price : 0) + (interior ? interior.price : 0) + extrasSum - (tradeIn ? tradeIn.value : 0) - (discount ? discount.value : 0);
+    if (formatNOK(computedTotal) !== summaryTotal.textContent) {
+      showToast("Fant et avvik i prisen — bytt fane og sjekk valgene før du sender igjen.");
+      updateSummary();
+      return;
+    }
+
+    setSending(true);
+    try {
+      var res = await fetch("/api/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-app-secret": settings.secret || ""
+        },
+        body: JSON.stringify({
+          companyName: settings.companyName,
+          model: model,
+          paint: paint,
+          interior: interior,
+          extras: extras,
+          tradeIn: tradeIn,
+          discount: discount,
+          financing: financing,
+          customer: {
+            name: custName.value.trim(),
+            phone: custPhone.value.trim(),
+            email: email
+          },
+          note: custNote.value.trim(),
+          bcc: settings.dealerEmail || "",
+          sellerName: settings.sellerName || "",
+          sellerPhone: settings.sellerPhone || ""
+        })
+      });
+      if (res.ok) {
+        showToast("Tilbudet er sendt til kunden.");
+        resetForm();
+      } else {
+        var data = await res.json().catch(function () { return {}; });
+        if (res.status === 401) showToast("Feil nøkkel — sjekk innstillinger ⚙.");
+        else showToast("Kunne ikke sende (" + (data.error || res.status) + "). Prøv igjen.");
+      }
+    } catch (e) {
+      showToast("Ingen kontakt med tjenesten. Sjekk internett og prøv igjen.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  // Builds the exact same request payload send() does (minus requiring a
+  // customer email), so a seller can print an offer for someone who wants
+  // it on paper rather than by email, even before customer details are
+  // filled in.
+  function buildOfferPayload() {
+    var model = getSelectedModel();
+    if (!model) return null;
+    return {
+      companyName: settings.companyName,
+      model: model,
+      paint: getSelectedPaint(),
+      interior: getSelectedInterior(),
+      extras: getSelectedExtras(),
+      tradeIn: getTradeIn(),
+      discount: getDiscount(),
+      financing: getFinancing(),
+      customer: {
+        name: custName.value.trim(),
+        phone: custPhone.value.trim(),
+        email: custEmail.value.trim()
+      },
+      note: custNote.value.trim(),
+      bcc: settings.dealerEmail || "",
+      sellerName: settings.sellerName || "",
+      sellerPhone: settings.sellerPhone || ""
+    };
+  }
+
+  async function printOffer() {
+    var payload = buildOfferPayload();
+    if (!payload) return;
+
+    // Open the tab synchronously, on the click itself, so the popup blocker
+    // doesn't kick in — we fill in its address once the PDF has arrived.
+    var printWindow = window.open("", "_blank");
+
+    printLabel.textContent = "Lager PDF …";
+    printBtn.disabled = true;
+    try {
+      var res = await fetch("/api/preview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-app-secret": settings.secret || ""
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        var data = await res.json().catch(function () { return {}; });
+        if (printWindow) printWindow.close();
+        if (res.status === 401) showToast("Feil nøkkel — sjekk innstillinger ⚙.");
+        else showToast("Kunne ikke lage utskrift (" + (data.error || res.status) + "). Prøv igjen.");
+        return;
+      }
+      var blob = await res.blob();
+      var url = URL.createObjectURL(blob);
+      if (printWindow) {
+        printWindow.location.href = url;
+      } else {
+        // Popup blocked despite opening synchronously (some browsers still
+        // block it) — fall back to a normal same-tab navigation so the
+        // seller can still get to the PDF and print it from there.
+        showToast("Åpner PDF i denne fanen — bruk tilbake-knappen for å komme til tilbudet igjen.");
+        window.location.href = url;
+      }
+    } catch (e) {
+      if (printWindow) printWindow.close();
+      showToast("Ingen kontakt med tjenesten. Sjekk internett og prøv igjen.");
+    } finally {
+      printLabel.textContent = "Skriv ut";
+      updateSendState();
+    }
+  }
+
+  function resetForm() {
+    state.extraNames = {};
+    custName.value = "";
+    custPhone.value = "";
+    custEmail.value = "";
+    custNote.value = "";
+    tradeInDesc.value = "";
+    tradeInValue.value = "";
+    discountValue.value = "";
+    discountDesc.value = "";
+    financeRate.value = "";
+    financeMonths.value = "";
+    financeDownPayment.value = "";
+    // Pre-filled from the saved defaults (⚙ → Finansiering) rather than
+    // left blank, so the seller doesn't have to retype the bank's current
+    // fees on every single offer — still freely editable per offer.
+    financeEstablishmentFee.value = settings.defaultEstablishmentFee || "";
+    financeRegistrationFee.value = settings.defaultRegistrationFee || "";
+    financeMonthlyFee.value = settings.defaultMonthlyFee || "";
+    renderExtras();
+    updateSummary();
+    selectTab(0);
+  }
+
+  sendBtn.addEventListener("click", send);
+  printBtn.addEventListener("click", printOffer);
+  settingsBtn.addEventListener("click", openSettings);
+
+  function openSettings() {
+    var backdrop = document.createElement("div");
+    backdrop.className = "sheet-backdrop";
+    backdrop.innerHTML =
+      '<div class="sheet" role="dialog" aria-label="Innstillinger">' +
+        '<div class="sheet-section">' +
+          '<h2>Bedrift</h2>' +
+          '<p class="hint">Vises øverst på tilbudet kunden mottar.</p>' +
+          '<div class="input-wrap"><input type="text" id="companySetting" placeholder="Firmanavn"></div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Kopi til deg</h2>' +
+          '<p class="hint">Du får automatisk en skjult kopi (BCC) av hvert tilbud som sendes. Svarer kunden på e-posten, havner svaret også her.</p>' +
+          '<div class="input-wrap"><input type="email" id="dealerEmailSetting" placeholder="din@epost.no"></div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Din kontaktinfo</h2>' +
+          '<p class="hint">Vises nederst i tilbudet, så kunden vet hvem de skal kontakte.</p>' +
+          '<div class="input-wrap" style="margin-bottom:8px;"><input type="text" id="sellerNameSetting" placeholder="Ditt navn"></div>' +
+          '<div class="input-wrap"><input type="tel" id="sellerPhoneSetting" placeholder="Din telefon"></div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Finansiering — standardgebyrer</h2>' +
+          '<p class="hint">Forhåndsutfylt i Finansiering-fanen hver gang, så dere slipper å skrive dem inn på nytt for hvert tilbud. Juster her når banken endrer sine gebyrer — selgeren kan fortsatt overstyre per tilbud ved behov.</p>' +
+          '<div class="row2" style="margin-bottom:8px;">' +
+            '<div class="input-wrap"><input type="number" inputmode="numeric" id="defaultEstablishmentFeeSetting" placeholder="Etableringsgebyr (kr)"></div>' +
+            '<div class="input-wrap"><input type="number" inputmode="numeric" id="defaultRegistrationFeeSetting" placeholder="Tinglysningsgebyr (kr)"></div>' +
+          '</div>' +
+          '<div class="input-wrap"><input type="number" inputmode="numeric" id="defaultMonthlyFeeSetting" placeholder="Termingebyr (kr/mnd)"></div>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Priser</h2>' +
+          '<p class="hint">Modeller, lakk, interiør og ekstrautstyr styres sentralt for alle som bruker appen, i filen <code>prices.json</code> i prosjektet på GitHub — rediger den der (enklest på PC), så oppdateres alle telefoner automatisk neste gang appen åpnes.</p>' +
+        '</div>' +
+        '<div class="sheet-section">' +
+          '<h2>Din kode</h2>' +
+          '<p class="hint">Din egen personlige kode (ikke delt med andre selgere) — sørger for at navnet ditt kommer riktig på tilbud du sender eller skriver ut. Skriv den inn én gang her på din egen telefon.</p>' +
+          '<div class="input-wrap"><input type="text" id="secretSetting" placeholder="Din kode" autocapitalize="off" autocorrect="off"></div>' +
+        '</div>' +
+        '<button class="sheet-close" id="closeSettings">Ferdig</button>' +
+      '</div>';
+    document.body.appendChild(backdrop);
+
+    var companySetting = backdrop.querySelector("#companySetting");
+    companySetting.value = settings.companyName;
+    var dealerEmailSetting = backdrop.querySelector("#dealerEmailSetting");
+    dealerEmailSetting.value = settings.dealerEmail;
+    var sellerNameSetting = backdrop.querySelector("#sellerNameSetting");
+    sellerNameSetting.value = settings.sellerName || "";
+    var sellerPhoneSetting = backdrop.querySelector("#sellerPhoneSetting");
+    sellerPhoneSetting.value = settings.sellerPhone || "";
+    var secretSetting = backdrop.querySelector("#secretSetting");
+    secretSetting.value = settings.secret;
+    var defaultEstablishmentFeeSetting = backdrop.querySelector("#defaultEstablishmentFeeSetting");
+    defaultEstablishmentFeeSetting.value = settings.defaultEstablishmentFee || "";
+    var defaultRegistrationFeeSetting = backdrop.querySelector("#defaultRegistrationFeeSetting");
+    defaultRegistrationFeeSetting.value = settings.defaultRegistrationFee || "";
+    var defaultMonthlyFeeSetting = backdrop.querySelector("#defaultMonthlyFeeSetting");
+    defaultMonthlyFeeSetting.value = settings.defaultMonthlyFee || "";
+
+    function closeAndSave() {
+      settings.companyName = companySetting.value.trim() || DEFAULTS.companyName;
+      settings.dealerEmail = dealerEmailSetting.value.trim();
+      settings.sellerName = sellerNameSetting.value.trim();
+      settings.sellerPhone = sellerPhoneSetting.value.trim();
+      settings.secret = secretSetting.value.trim();
+      settings.defaultEstablishmentFee = defaultEstablishmentFeeSetting.value.trim();
+      settings.defaultRegistrationFee = defaultRegistrationFeeSetting.value.trim();
+      settings.defaultMonthlyFee = defaultMonthlyFeeSetting.value.trim();
+      saveSettings(settings);
+      renderModels();
+      renderPaints();
+      renderInteriors();
+      renderExtras();
+      // Refresh the fee fields to the new defaults right away — this is
+      // the "bank changed its fees" path, so the update should show up
+      // immediately rather than waiting for the next offer.
+      financeEstablishmentFee.value = settings.defaultEstablishmentFee || "";
+      financeRegistrationFee.value = settings.defaultRegistrationFee || "";
+      financeMonthlyFee.value = settings.defaultMonthlyFee || "";
+      updateSummary();
+      document.body.removeChild(backdrop);
+      showToast("Lagret.");
+    }
+
+    backdrop.querySelector("#closeSettings").addEventListener("click", closeAndSave);
+    backdrop.addEventListener("click", function (e) {
+      if (e.target === backdrop) closeAndSave();
+    });
+  }
+
+  (async function init() {
+    var prices = await loadPrices();
+    settings.models = prices.models;
+    var firstModel = settings.models.length ? settings.models[0] : null;
+    state.modelName = firstModel ? firstModel.name : null;
+    state.paintName = (firstModel && firstModel.paints && firstModel.paints.length) ? firstModel.paints[0].name : null;
+    state.interiorName = (firstModel && firstModel.interiors && firstModel.interiors.length) ? firstModel.interiors[0].name : null;
+
+    renderModels();
+    renderPaints();
+    renderInteriors();
+    renderExtras();
+    // Same pre-fill as resetForm() — so the fee fields already show the
+    // saved defaults the very first time the Finansiering tab is opened,
+    // not just after the first offer is sent.
+    financeEstablishmentFee.value = settings.defaultEstablishmentFee || "";
+    financeRegistrationFee.value = settings.defaultRegistrationFee || "";
+    financeMonthlyFee.value = settings.defaultMonthlyFee || "";
+    updateSummary();
+
+    if (!settings.secret) {
+      setTimeout(function () {
+        showToast("Fullfør oppsettet under innstillinger ⚙ (nøkkel).");
+      }, 600);
+    }
+  })();
+})();
+</script>
+</body>
+</html>
