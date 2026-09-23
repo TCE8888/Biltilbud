@@ -1,4 +1,5 @@
 const { LOGO_BYTES, buildOfferPdf, prepareOffer, loadCarImage } = require("../pdfBuilder.js");
+const { resolveSeller, sellerKeysConfigured } = require("../sellerAuth.js");
 
 // Vercel serverless function (Node runtime). Builds the exact same PDF as
 // api/send.js, using the same shared pdfBuilder.js, but just returns the PDF
@@ -43,10 +44,20 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const appSecret = process.env.APP_SECRET;
-  if (appSecret && req.headers["x-app-secret"] !== appSecret) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
+  // Same two-tier auth as api/send.js — see the comment there for why.
+  const providedKey = req.headers["x-app-secret"] || "";
+  const seller = resolveSeller(providedKey);
+  if (sellerKeysConfigured()) {
+    if (!seller) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+  } else {
+    const appSecret = process.env.APP_SECRET;
+    if (appSecret && providedKey !== appSecret) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
   }
 
   let body;
@@ -55,6 +66,9 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     res.status(400).json({ error: "invalid_body" });
     return;
+  }
+  if (seller) {
+    body = Object.assign({}, body, { sellerName: seller.name, sellerPhone: seller.phone });
   }
 
   const offer = prepareOffer(body, { requireCustomerEmail: false });
